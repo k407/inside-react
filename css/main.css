@@ -1,0 +1,43 @@
+body {
+  font: caption;
+  font-size: 16px;
+  background-color: #F9F9FB;
+}
+
+.wrapper {
+  padding: 2rem;
+  max-width: 1440px;
+  margin: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo {
+  height: 82px;
+  width: 82px;
+}
+
+.clock {
+  margin-left: 1.3rem;
+  font-size: 2rem;
+}
+
+.items {
+  display: flex;
+  justify-content: center;
+}
+
+.item {
+  height: 8rem;
+  width: 6rem;
+  margin: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  font-size: 1.2rem;
+}
