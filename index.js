@@ -133,6 +133,19 @@ api.get('/items').then((items) => {
     items,
   };
   renderView(state);
+
+  setInterval(() => {
+    state = {
+      ...state,
+      items: state.items.map((item) => {
+        return {
+          ...item,
+          price: Math.floor(Math.random() * (20 + 1)),
+        };
+      }),
+    };
+    renderView(state);
+  }, 2000);
 });
 
 setInterval(() => {
