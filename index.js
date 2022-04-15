@@ -1,6 +1,6 @@
 console.log('hello world');
 
-const state = {
+let state = {
   time: new Date(),
   items: [
     {
@@ -78,15 +78,21 @@ function Item({ item }) {
   return node;
 }
 
-setInterval(() => {
-  state.time = new Date();
-  const app = document.querySelector('.wrapper');
-  const newApp = App({ state });
-  app.replaceWith(newApp);
-}, 1000);
-
 function render(newDom, realDomRoot) {
+  realDomRoot.innerHTML = '';
   realDomRoot.append(newDom);
 }
 
-render(App({ state }), document.querySelector('#app'));
+function renderView(state) {
+  render(App({ state }), document.querySelector('#app'));
+}
+
+setInterval(() => {
+  state = {
+    ...state,
+    time: new Date(),
+  };
+  renderView(state);
+}, 1000);
+
+renderView(state);
