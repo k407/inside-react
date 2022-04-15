@@ -16,41 +16,61 @@ const state = {
   ],
 };
 
-const wrapper = document.createElement('div');
-wrapper.className = 'wrapper';
+function App({ state }) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'wrapper';
+  wrapper.append(Header());
+  wrapper.append(Items({items: state.items}));
+  return wrapper;
+}
 
-const header = document.createElement('header');
-header.className = 'header';
+function Header() {
+  const header = document.createElement('header');
+  header.className = 'header';
+  header.append(Logo());
+  header.append(Clock({ time: state.time }));
+  return header;
+}
 
-const logo = document.createElement('img');
-logo.className = 'logo';
-logo.src = 'images/logo.png';
+function Logo() {
+  const logo = document.createElement('img');
+  logo.className = 'logo';
+  logo.src = 'images/logo.png';
+  return logo;
+}
 
-const clock = document.createElement('div');
-clock.className = 'clock';
-clock.innerText = state.time.toLocaleTimeString();
+function Clock({ time }) {
+  const clock = document.createElement('div');
+  clock.className = 'clock';
+  clock.innerText = time.toLocaleTimeString();
+  return clock;
+}
 
-const items = document.createElement('div');
-items.className = 'items';
+function Items({ items }) {
+  const list = document.createElement('div');
+  list.className = 'items';
+  items.forEach((item) => {
+    list.append(Item({ item }));
+  });
+  return list;
+}
 
-state.items.forEach((item) => {
+function Item({ item }) {
   const node = document.createElement('article');
   node.className = 'item';
   const name = document.createElement('h2');
-  name.className = 'lot_name';
+  name.className = 'item_name';
   name.innerText = item.name;
   const price = document.createElement('div');
-  price.className = 'lot_price';
+  price.className = 'item_price';
   price.innerText = item.price;
   node.append(name);
   node.append(price);
-  items.append(node);
-});
+  return node;
+}
 
-const domRoot = document.querySelector('#app');
+function render(newDom, realDomRoot) {
+  realDomRoot.append(newDom)
+}
 
-header.append(logo);
-header.append(clock);
-wrapper.append(header);
-wrapper.append(items);
-domRoot.append(wrapper);
+render(App({ state }), document.querySelector('#app'));
