@@ -20,7 +20,7 @@ function App({ state }) {
   const wrapper = document.createElement('div');
   wrapper.className = 'wrapper';
   wrapper.append(Header());
-  wrapper.append(Items({items: state.items}));
+  wrapper.append(Items({ items: state.items }));
   return wrapper;
 }
 
@@ -40,10 +40,19 @@ function Logo() {
 }
 
 function Clock({ time }) {
-  const clock = document.createElement('div');
-  clock.className = 'clock';
-  clock.innerText = time.toLocaleTimeString();
-  return clock;
+  const node = document.createElement('div');
+  node.className = 'clock';
+  const value = document.createElement('span');
+  value.className = 'value';
+  value.innerText = time.toLocaleTimeString();
+  const icon = document.createElement('img');
+  icon.className = 'icon';
+  time.getHours() >= 7 && time.getHours() <= 21
+    ? (icon.src = 'images/sun.png')
+    : (icon.src = 'images/moon.png');
+  node.append(value);
+  node.append(icon);
+  return node;
 }
 
 function Items({ items }) {
@@ -69,8 +78,15 @@ function Item({ item }) {
   return node;
 }
 
+setInterval(() => {
+  state.time = new Date();
+  const app = document.querySelector('.wrapper');
+  const newApp = App({ state });
+  app.replaceWith(newApp);
+}, 1000);
+
 function render(newDom, realDomRoot) {
-  realDomRoot.append(newDom)
+  realDomRoot.append(newDom);
 }
 
 render(App({ state }), document.querySelector('#app'));
