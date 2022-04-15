@@ -1,19 +1,34 @@
 console.log('hello world');
 
+const api = {
+  get(url) {
+    switch (url) {
+      case '/items':
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve([
+              {
+                id: 1,
+                name: 'item_1',
+                price: 7,
+              },
+              {
+                id: 2,
+                name: 'item_2',
+                price: 9,
+              },
+            ]);
+          }, 1000);
+        });
+      default:
+        throw new Error('404');
+    }
+  },
+};
+
 let state = {
   time: new Date(),
-  items: [
-    {
-      id: 1,
-      name: 'item_1',
-      price: 7,
-    },
-    {
-      id: 2,
-      name: 'item_2',
-      price: 9,
-    },
-  ],
+  items: null
 };
 
 function App({ state }) {
@@ -111,6 +126,14 @@ function render(newDom, realDomRoot) {
 function renderView(state) {
   render(App({ state }), document.querySelector('#app'));
 }
+
+api.get('/items').then((items) => {
+  state = {
+    ...state,
+    items,
+  };
+  renderView(state);
+});
 
 setInterval(() => {
   state = {
