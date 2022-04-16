@@ -17,11 +17,30 @@ const api = {
                 name: 'item_2',
                 price: 9,
               },
+              {
+                id: 3,
+                name: 'item_3',
+                price: 11,
+              },
             ]);
           }, 1000);
         });
       default:
         throw new Error('404');
+    }
+  },
+};
+
+const stream = {
+  subscribe(channel, listener) {
+    const match = /price-(\d+)/.exec(channel);
+    if (match) {
+      setInterval(() => {
+        listener({
+          id: parseInt(match[1]),
+          price: Math.floor(Math.random() * 10 + 1),
+        });
+      }, 1000);
     }
   },
 };
@@ -150,18 +169,25 @@ api.get('/items').then((items) => {
   };
   renderView(state);
 
-  setInterval(() => {
+  const onPrice = (data) => {
     state = {
       ...state,
       items: state.items.map((item) => {
-        return {
-          ...item,
-          price: Math.floor(Math.random() * (20 + 1)),
-        };
+        if (item.id === data.id) {
+          return {
+            ...item,
+            price: data.price,
+          };
+        }
+        return item;
       }),
     };
     renderView(state);
-  }, 2000);
+  };
+
+  items.forEach((item) => {
+    stream.subscribe(`price-${item.id}`, onPrice);
+  });
 });
 
 setInterval(() => {
