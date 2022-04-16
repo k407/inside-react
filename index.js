@@ -28,7 +28,29 @@ const api = {
 
 let state = {
   time: new Date(),
-  items: null
+  items: null,
+  placeholders: [
+    {
+      tagName: 'p',
+      className: 'placeholder_xsmall',
+      innerText: '\u00A0',
+    },
+    {
+      tagName: 'p',
+      className: 'placeholder_large',
+      innerText: '\u00A0',
+    },
+    {
+      tagName: 'p',
+      className: 'placeholder_small',
+      innerText: '\u00A0',
+    },
+    {
+      tagName: 'p',
+      className: 'placeholder_medium',
+      innerText: '\u00A0',
+    },
+  ],
 };
 
 function App({ state }) {
@@ -70,31 +92,25 @@ function Clock({ time }) {
   return node;
 }
 
-function Loading() {
+function Placeholder({ placeholder }) {
+  const node = document.createElement(placeholder.tagName);
+  node.className = placeholder.className;
+  node.innerText = placeholder.innerText;
+  return node;
+}
+function Loading({ placeholders }) {
   const node = document.createElement('div');
   node.className = 'placeholder';
-  const xsmall = document.createElement('p');
-  xsmall.className = 'placeholder_xsmall';
-  xsmall.innerText = '\u00A0';
-  const small = document.createElement('p');
-  small.className = 'placeholder_small';
-  small.innerText = '\u00A0';
-  const medium = document.createElement('p');
-  medium.className = 'placeholder_medium';
-  medium.innerText = '\u00A0';
-  const large = document.createElement('p');
-  large.className = 'placeholder_large';
-  large.innerText = '\u00A0';
-  node.append(xsmall);
-  node.append(large);
-  node.append(small);
-  node.append(medium);
+
+  placeholders.forEach((placeholder) => {
+    node.append(Placeholder({ placeholder }));
+  });
   return node;
 }
 
 function Items({ items }) {
   if (items === null) {
-    return Loading();
+    return Loading({ placeholders: state.placeholders });
   }
   const list = document.createElement('div');
   list.className = 'items';
