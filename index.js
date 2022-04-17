@@ -72,141 +72,210 @@ let state = {
 };
 
 function App({ state }) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'wrapper';
-  wrapper.append(Header());
-  wrapper.append(Items({ items: state.items }));
-
-  return wrapper;
+  return {
+    type: 'div',
+    props: {
+      className: 'wrapper',
+      children: [
+        {
+          type: Header,
+          props: {},
+        },
+        {
+          type: Items,
+          props: { items: state.items },
+        },
+      ],
+    },
+  };
 }
 
 function Header() {
-  const header = document.createElement('header');
-  header.className = 'header';
-  header.append(Logo());
-  header.append(Clock({ time: state.time }));
-
-  return header;
+  return {
+    type: 'header',
+    props: {
+      className: 'header',
+      children: [
+        {
+          type: Logo,
+          props: {},
+        },
+        {
+          type: Clock,
+          props: { time: state.time },
+        },
+      ],
+    },
+  };
 }
 
 function Logo() {
-  const logo = document.createElement('img');
-  logo.className = 'logo';
-  logo.src = 'images/logo.png';
-
-  return logo;
+  return {
+    type: 'img',
+    props: {
+      className: 'logo',
+      src: 'images/logo.png',
+    },
+  };
 }
 
 function Clock({ time }) {
-  const node = document.createElement('div');
-  node.className = 'clock';
+  const isDay = time.getHours() >= 7 && time.getHours() <= 21;
 
-  const value = document.createElement('span');
-  value.className = 'value';
-  value.innerText = time.toLocaleTimeString();
-
-  const icon = document.createElement('img');
-  icon.className = 'icon';
-
-  time.getHours() >= 7 && time.getHours() <= 21 ? (icon.src = 'images/sun.png') : (icon.src = 'images/moon.png');
-
-  node.append(value);
-  node.append(icon);
-
-  return node;
+  return {
+    type: 'div',
+    props: {
+      className: 'clock',
+      children: [
+        {
+          type: 'span',
+          props: {
+            className: 'value',
+            children: time.toLocaleTimeString(),
+          },
+        },
+        {
+          type: 'img',
+          props: {
+            className: 'icon',
+            src: isDay ? 'images/sun.png' : 'images/moon.png',
+          },
+        },
+      ],
+    },
+  };
 }
 
 function Placeholder({ placeholder }) {
-  const node = document.createElement(placeholder.tagName);
-  node.className = placeholder.className;
-  node.innerText = placeholder.innerText;
-
-  return node;
+  return {
+    type: placeholder.tagName,
+    props: {
+      className: placeholder.className,
+      children: placeholder.innerText,
+    },
+  };
 }
+
 function Loading({ placeholders }) {
-  const node = document.createElement('div');
-  node.className = 'placeholder';
-
-  placeholders.forEach((placeholder) => {
-    node.append(Placeholder({ placeholder }));
-  });
-
-  return node;
+  return {
+    type: 'div',
+    props: {
+      className: 'placeholder',
+      children: placeholders.map((placeholder) => ({
+        type: Placeholder,
+        props: { placeholder },
+      })),
+    },
+  };
 }
 
 function Items({ items }) {
   if (items === null) {
-    return Loading({ placeholders: state.placeholders });
+    return {
+      type: Loading,
+      props: { placeholders: state.placeholders },
+    };
   }
 
-  const list = document.createElement('div');
-  list.className = 'items';
-
-  items.forEach((item) => {
-    list.append(Item({ item }));
-  });
-
-  return list;
+  return {
+    type: 'div',
+    props: {
+      className: 'items',
+      children: items.map((item) => ({
+        type: Item,
+        props: { item },
+      })),
+    },
+  };
 }
 
 function Item({ item }) {
-  const node = document.createElement('article');
-  node.className = 'item';
+  return {
+    type: 'article',
+    props: {
+      className: 'item',
+      children: [
+        {
+          type: 'h2',
+          props: {
+            className: 'item_name',
+            children: item.name,
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            className: 'item_price',
+            children: item.price,
+          },
+        },
+      ],
+    },
+  };
+}
 
-  const name = document.createElement('h2');
-  name.className = 'item_name';
-  name.innerText = item.name;
+function evaluate(virtualNode) {
+  if (typeof virtualNode !== 'object') {
+    return virtualNode;
+  }
 
-  const price = document.createElement('div');
-  price.className = 'item_price';
-  price.innerText = item.price;
+  if (typeof virtualNode.type === 'function') {
+    return evaluate(virtualNode.type(virtualNode.props));
+  }
 
-  node.append(name);
-  node.append(price);
+  const props = virtualNode.props || {};
 
-  return node;
+  return {
+    ...virtualNode,
+    props: {
+      ...props,
+      children: Array.isArray(props.children) ? props.children.map(evaluate) : [evaluate(props.children)],
+    },
+  };
 }
 
 function render(virtualDom, realDomRoot) {
-  const virtualDomRoot = document.createElement(realDomRoot.tagName);
-  virtualDomRoot.id = realDomRoot.id;
-  virtualDomRoot.append(virtualDom);
+  const evaluatedVirtualDom = evaluate(virtualDom);
+  const virtualDomRoot = {
+    type: realDomRoot.tagName.toLowerCase(),
+    props: {
+      ...realDomRoot.attributes,
+      children: [evaluatedVirtualDom],
+    },
+  };
 
   sync(virtualDomRoot, realDomRoot);
 }
 
 function createRealNodeFromVirtual(virtual) {
-  if (virtual.nodeType === Node.TEXT_NODE) {
+  if (typeof virtual !== 'object') {
     return document.createTextNode('');
   }
-  return document.createElement(virtual.tagName);
+  return document.createElement(virtual.type);
 }
 
 function sync(virtualNode, realNode) {
-  if (virtualNode.id !== realNode.id) {
-    realNode.id = virtualNode.id;
-  }
-
-  if (virtualNode.className !== realNode.className) {
-    realNode.className = virtualNode.className;
-  }
-
-  if (virtualNode.attributes) {
-    Array.from(virtualNode.attributes).forEach((attr) => {
-      realNode[attr.name] = attr.value;
+  if (virtualNode.props) {
+    Object.entries(virtualNode.props).forEach(([name, value]) => {
+      if (name === 'children') {
+        return;
+      }
+      if (realNode[name] !== value) {
+        realNode[name] = value;
+      }
     });
   }
 
-  if (virtualNode.nodeValue !== realNode.nodeValue) {
-    realNode.nodeValue = virtualNode.nodeValue;
+  if (typeof virtualNode !== 'object' && virtualNode !== realNode.nodeValue) {
+    realNode.nodeValue = virtualNode;
   }
 
-  const virtualChildNodes = virtualNode.childNodes;
-  const realChildNodes = realNode.childNodes;
+  const virtualChildren = virtualNode.props ? virtualNode.props.children || [] : [];
+  const realChildren = realNode.childNodes;
 
-  for (let i = 0; i < virtualChildNodes.length || i < realChildNodes.length; i++) {
-    const virtual = virtualChildNodes[i];
-    const real = realChildNodes[i];
+  for (let i = 0; i < virtualChildren.length || i < realChildren.length; i++) {
+    const virtual = virtualChildren[i];
+    const real = realChildren[i];
 
     // add
     if (virtual !== undefined && real === undefined) {
@@ -221,12 +290,12 @@ function sync(virtualNode, realNode) {
     }
 
     // update
-    if (virtual !== undefined && real !== undefined && virtual.tagName === real.tagName) {
+    if (virtual !== undefined && real !== undefined && (virtual.type || '') === (real.tagName || '').toLowerCase()) {
       sync(virtual, real);
     }
 
     // replace
-    if (virtual !== undefined && real !== undefined && virtual.tagName !== real.tagName) {
+    if (virtual !== undefined && real !== undefined && (virtual.type || '') !== (real.tagName || '').toLowerCase()) {
       const newReal = createRealNodeFromVirtual(virtual);
       sync(virtual, newReal);
       realNode.replaceChild(newReal, real);
