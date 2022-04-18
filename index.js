@@ -71,147 +71,83 @@ let state = {
   ],
 };
 
+const VDom = {
+  createElement: (type, config, ...children) => {
+    const props = config || {};
+    const key = config ? config.key || null : null;
+
+    if (children.length === 1) {
+      props.children = children[0];
+    } else {
+      props.children = children;
+    }
+
+    return {
+      type,
+      key,
+      props,
+    };
+  },
+};
+
 function App({ state }) {
-  return {
-    type: 'div',
-    props: {
-      className: 'wrapper',
-      children: [
-        {
-          type: Header,
-          props: {},
-        },
-        {
-          type: Items,
-          props: { items: state.items },
-        },
-      ],
-    },
-  };
+  return VDom.createElement(
+    'div',
+    { className: 'wrapper' },
+    VDom.createElement(Header),
+    VDom.createElement(Items, { items: state.items })
+  );
 }
 
 function Header() {
-  return {
-    type: 'header',
-    props: {
-      className: 'header',
-      children: [
-        {
-          type: Logo,
-          props: {},
-        },
-        {
-          type: Clock,
-          props: { time: state.time },
-        },
-      ],
-    },
-  };
+  return VDom.createElement(
+    'header',
+    { className: 'header' },
+    VDom.createElement(Logo),
+    VDom.createElement(Clock, { time: state.time })
+  );
 }
 
 function Logo() {
-  return {
-    type: 'img',
-    props: {
-      className: 'logo',
-      src: 'images/logo.png',
-    },
-  };
+  return VDom.createElement('img', { className: 'logo', src: 'images/logo.png' });
 }
 
 function Clock({ time }) {
   const isDay = time.getHours() >= 7 && time.getHours() <= 21;
 
-  return {
-    type: 'div',
-    props: {
-      className: 'clock',
-      children: [
-        {
-          type: 'span',
-          props: {
-            className: 'value',
-            children: time.toLocaleTimeString(),
-          },
-        },
-        {
-          type: 'img',
-          props: {
-            className: 'icon',
-            src: isDay ? 'images/sun.png' : 'images/moon.png',
-          },
-        },
-      ],
-    },
-  };
+  return VDom.createElement(
+    'div',
+    { className: 'clock' },
+    VDom.createElement('span', { className: 'value' }, time.toLocaleTimeString()),
+    VDom.createElement('img', { className: 'icon', src: isDay ? 'images/sun.png' : 'images/moon.png' })
+  );
 }
 
 function Placeholder({ placeholder }) {
-  return {
-    type: placeholder.tagName,
-    props: {
-      className: placeholder.className,
-      children: placeholder.innerText,
-    },
-  };
+  return VDom.createElement(placeholder.tagName, { className: placeholder.className }, placeholder.innerText);
 }
 
 function Loading({ placeholders }) {
-  return {
-    type: 'div',
-    props: {
-      className: 'placeholder',
-      children: placeholders.map((placeholder) => ({
-        type: Placeholder,
-        props: { placeholder },
-      })),
-    },
-  };
+  const children = placeholders.map((placeholder) => VDom.createElement(Placeholder, { placeholder }));
+
+  return VDom.createElement('div', { className: 'placeholder' }, children);
 }
 
 function Items({ items }) {
   if (items === null) {
-    return {
-      type: Loading,
-      props: { placeholders: state.placeholders },
-    };
+    return VDom.createElement(Loading, { placeholders: state.placeholders });
   }
 
-  return {
-    type: 'div',
-    props: {
-      className: 'items',
-      children: items.map((item) => ({
-        type: Item,
-        props: { item },
-      })),
-    },
-  };
+  const children = items.map((item) => VDom.createElement(Item, { item }));
+
+  return VDom.createElement('div', { className: 'items' }, children);
 }
 
 function Item({ item }) {
-  return {
-    type: 'article',
-    props: {
-      className: 'item',
-      children: [
-        {
-          type: 'h2',
-          props: {
-            className: 'item_name',
-            children: item.name,
-          },
-        },
-        {
-          type: 'div',
-          props: {
-            className: 'item_price',
-            children: item.price,
-          },
-        },
-      ],
-    },
-  };
+  return VDom.createElement('article', { className: 'item' }, [
+    VDom.createElement('h2', { className: 'item_name' }, item.name),
+    VDom.createElement('div', { className: 'item_price' }, item.price),
+  ]);
 }
 
 function evaluate(virtualNode) {
@@ -236,13 +172,9 @@ function evaluate(virtualNode) {
 
 function render(virtualDom, realDomRoot) {
   const evaluatedVirtualDom = evaluate(virtualDom);
-  const virtualDomRoot = {
-    type: realDomRoot.tagName.toLowerCase(),
-    props: {
-      ...realDomRoot.attributes,
-      children: [evaluatedVirtualDom],
-    },
-  };
+  const virtualDomRoot = VDom.createElement(realDomRoot.tagName.toLowerCase(), { ...realDomRoot.attributes }, [
+    evaluatedVirtualDom,
+  ]);
 
   sync(virtualDomRoot, realDomRoot);
 }
@@ -304,7 +236,7 @@ function sync(virtualNode, realNode) {
 }
 
 function renderView(state) {
-  render(App({ state }), document.querySelector('#app'));
+  render(VDom.createElement(App, { state }), document.querySelector('#app'));
 }
 
 api.get('/items').then((items) => {
