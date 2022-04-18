@@ -71,173 +71,81 @@ let state = {
   ],
 };
 
-const VDom = {
-  createElement: (type, config, ...children) => {
-    const props = config || {};
-    const key = config ? config.key || null : null;
-
-    if (children.length === 1) {
-      props.children = children[0];
-    } else {
-      props.children = children;
-    }
-
-    return {
-      type,
-      key,
-      props,
-    };
-  },
-};
-
 function App({ state }) {
-  return VDom.createElement(
+  return React.createElement(
     'div',
     { className: 'wrapper' },
-    VDom.createElement(Header),
-    VDom.createElement(Items, { items: state.items })
+    React.createElement(Header),
+    React.createElement(Items, { items: state.items })
   );
 }
 
 function Header() {
-  return VDom.createElement(
+  return React.createElement(
     'header',
     { className: 'header' },
-    VDom.createElement(Logo),
-    VDom.createElement(Clock, { time: state.time })
+    React.createElement(Logo),
+    React.createElement(Clock, { time: state.time })
   );
 }
 
 function Logo() {
-  return VDom.createElement('img', { className: 'logo', src: 'images/logo.png' });
+  return React.createElement('img', { className: 'logo', src: 'images/logo.png' });
 }
 
 function Clock({ time }) {
   const isDay = time.getHours() >= 7 && time.getHours() <= 21;
 
-  return VDom.createElement(
+  return React.createElement(
     'div',
     { className: 'clock' },
-    VDom.createElement('span', { className: 'value' }, time.toLocaleTimeString()),
-    VDom.createElement('img', { className: 'icon', src: isDay ? 'images/sun.png' : 'images/moon.png' })
+    React.createElement('span', { className: 'value' }, time.toLocaleTimeString()),
+    React.createElement('img', { className: 'icon', src: isDay ? 'images/sun.png' : 'images/moon.png' })
   );
 }
 
 function Placeholder({ placeholder }) {
-  return VDom.createElement(placeholder.tagName, { className: placeholder.className }, placeholder.innerText);
+  return React.createElement(placeholder.tagName, { className: placeholder.className }, placeholder.innerText);
 }
 
 function Loading({ placeholders }) {
-  const children = placeholders.map((placeholder) => VDom.createElement(Placeholder, { placeholder }));
+  const children = placeholders.map((placeholder) => React.createElement(Placeholder, { placeholder }));
 
-  return VDom.createElement('div', { className: 'placeholder' }, children);
+  return React.createElement('div', { className: 'placeholder' }, children);
 }
 
 function Items({ items }) {
   if (items === null) {
-    return VDom.createElement(Loading, { placeholders: state.placeholders });
+    return React.createElement(Loading, { placeholders: state.placeholders });
   }
 
-  const children = items.map((item) => VDom.createElement(Item, { item }));
+  const children = items.map((item) => React.createElement(Item, { item, key: item.id }));
 
-  return VDom.createElement('div', { className: 'items' }, children);
+  return React.createElement('div', { className: 'items' }, children);
 }
 
 function Item({ item }) {
-  return VDom.createElement('article', { className: 'item' }, [
-    VDom.createElement('h2', { className: 'item_name' }, item.name),
-    VDom.createElement('div', { className: 'item_price' }, item.price),
-  ]);
-}
-
-function evaluate(virtualNode) {
-  if (typeof virtualNode !== 'object') {
-    return virtualNode;
-  }
-
-  if (typeof virtualNode.type === 'function') {
-    return evaluate(virtualNode.type(virtualNode.props));
-  }
-
-  const props = virtualNode.props || {};
-
-  return {
-    ...virtualNode,
-    props: {
-      ...props,
-      children: Array.isArray(props.children) ? props.children.map(evaluate) : [evaluate(props.children)],
-    },
-  };
-}
-
-function render(virtualDom, realDomRoot) {
-  const evaluatedVirtualDom = evaluate(virtualDom);
-  const virtualDomRoot = VDom.createElement(realDomRoot.tagName.toLowerCase(), { ...realDomRoot.attributes }, [
-    evaluatedVirtualDom,
-  ]);
-
-  sync(virtualDomRoot, realDomRoot);
-}
-
-function createRealNodeFromVirtual(virtual) {
-  if (typeof virtual !== 'object') {
-    return document.createTextNode('');
-  }
-  return document.createElement(virtual.type);
-}
-
-function sync(virtualNode, realNode) {
-  if (virtualNode.props) {
-    Object.entries(virtualNode.props).forEach(([name, value]) => {
-      if (name === 'children') {
-        return;
-      }
-      if (realNode[name] !== value) {
-        realNode[name] = value;
-      }
-    });
-  }
-
-  if (typeof virtualNode !== 'object' && virtualNode !== realNode.nodeValue) {
-    realNode.nodeValue = virtualNode;
-  }
-
-  const virtualChildren = virtualNode.props ? virtualNode.props.children || [] : [];
-  const realChildren = realNode.childNodes;
-
-  for (let i = 0; i < virtualChildren.length || i < realChildren.length; i++) {
-    const virtual = virtualChildren[i];
-    const real = realChildren[i];
-
-    // add
-    if (virtual !== undefined && real === undefined) {
-      const newReal = createRealNodeFromVirtual(virtual);
-      sync(virtual, newReal);
-      realNode.appendChild(newReal);
-    }
-
-    // remove
-    if (virtual === undefined && real !== undefined) {
-      realNode.remove(real);
-    }
-
-    // update
-    if (virtual !== undefined && real !== undefined && (virtual.type || '') === (real.tagName || '').toLowerCase()) {
-      sync(virtual, real);
-    }
-
-    // replace
-    if (virtual !== undefined && real !== undefined && (virtual.type || '') !== (real.tagName || '').toLowerCase()) {
-      const newReal = createRealNodeFromVirtual(virtual);
-      sync(virtual, newReal);
-      realNode.replaceChild(newReal, real);
-    }
-  }
+  return React.createElement(
+    'article',
+    { className: 'item' },
+    React.createElement('h2', { className: 'item_name' }, item.name),
+    React.createElement('div', { className: 'item_price' }, item.price)
+  );
 }
 
 function renderView(state) {
-  render(VDom.createElement(App, { state }), document.querySelector('#app'));
+  ReactDOM.render(React.createElement(App, { state }), document.querySelector('#app'));
 }
+
+renderView(state);
+
+setInterval(() => {
+  state = {
+    ...state,
+    time: new Date(),
+  };
+  renderView(state);
+}, 1000);
 
 api.get('/items').then((items) => {
   state = {
@@ -266,13 +174,3 @@ api.get('/items').then((items) => {
     stream.subscribe(`price-${item.id}`, onPrice);
   });
 });
-
-setInterval(() => {
-  state = {
-    ...state,
-    time: new Date(),
-  };
-  renderView(state);
-}, 1000);
-
-renderView(state);
