@@ -10,9 +10,199 @@
     <link rel="stylesheet" href="css/main.css">
     <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script src="index.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
     <div id="app"></div>
+    <script type="text/jsx">
+      const api = {
+        get(url) {
+          switch (url) {
+            case '/items':
+              return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                  resolve([
+                    {
+                      id: 1,
+                      name: 'item_1',
+                      price: 7,
+                    },
+                    {
+                      id: 2,
+                      name: 'item_2',
+                      price: 9,
+                    },
+                    {
+                      id: 3,
+                      name: 'item_3',
+                      price: 11,
+                    },
+                  ]);
+                }, 1000);
+              });
+            default:
+              throw new Error('404');
+          }
+        },
+      };
+
+      const stream = {
+        subscribe(channel, listener) {
+          const match = /price-(\d+)/.exec(channel);
+
+          if (match) {
+            setInterval(() => {
+              listener({
+                id: parseInt(match[1]),
+                price: Math.floor(Math.random() * 10 + 1),
+              });
+            }, 1000);
+          }
+        },
+      };
+
+      let state = {
+        time: new Date(),
+        items: null,
+        placeholders: [
+          {
+            id: 1,
+            tagName: 'p',
+            className: 'placeholder_xsmall',
+            innerText: '\u00A0',
+          },
+          {
+            id: 2,
+            tagName: 'p',
+            className: 'placeholder_large',
+            innerText: '\u00A0',
+          },
+          {
+            id: 3,
+            tagName: 'p',
+            className: 'placeholder_small',
+            innerText: '\u00A0',
+          },
+          {
+            id: 4,
+            tagName: 'p',
+            className: 'placeholder_medium',
+            innerText: '\u00A0',
+          },
+        ],
+      };
+
+      function App({ state }) {
+        return (
+          <div className="wrapper">
+            <Header />
+            <Items items={state.items} />
+          </div>
+        )
+      }
+
+      function Header() {
+        return (
+          <header className="header">
+            <Logo />
+            <Clock time={state.time} />
+          </header>
+        )
+      }
+
+      function Logo() {
+        return <img className="logo" src="images/logo.png" alt="" />;
+      }
+
+      function Clock({ time }) {
+        const isDay = time.getHours() >= 7 && time.getHours() <= 21;
+
+        return (
+          <div className="clock">
+            <span className="value">{time.toLocaleTimeString()}</span>
+            <img className="icon" src={isDay ? 'images/sun.png' : 'images/moon.png'} alt="" />
+          </div>
+        )
+      }
+
+      function Placeholder({ placeholder }) {
+        return (
+          <placeholder.tagName className={placeholder.className}>
+            {placeholder.innerText}
+          </placeholder.tagName>
+        )
+      }
+
+      function Loading({ placeholders }) {
+        return (
+          <div className="placeholder">
+            { placeholders.map((placeholder) => <Placeholder placeholder={placeholder} key={placeholder.id} />) }
+          </div>
+        )
+      }
+
+      function Items({ items }) {
+        if (items === null) {
+          return <Loading placeholders={ state.placeholders }/>
+        }
+
+        return (
+          <div className="items">
+            { items.map((item) => <Item item={item} key={item.id} />) }
+          </div>
+        )
+      }
+
+      function Item({ item }) {
+        return (
+          <article className="item">
+            <h2 className="item_name">{item.name}</h2>
+            <div className="item_price">{item.price}</div>
+          </article>
+        )
+      }
+
+      function renderView(state) {
+        ReactDOM.render(<App state={state}/>, document.querySelector('#app'));
+      }
+
+      renderView(state);
+
+      setInterval(() => {
+        state = {
+          ...state,
+          time: new Date(),
+        };
+        renderView(state);
+      }, 1000);
+
+      api.get('/items').then((items) => {
+        state = {
+          ...state,
+          items,
+        };
+        renderView(state);
+
+        const onPrice = (data) => {
+          state = {
+            ...state,
+            items: state.items.map((item) => {
+              if (item.id === data.id) {
+                return {
+                  ...item,
+                  price: data.price,
+                };
+              }
+              return item;
+            }),
+          };
+          renderView(state);
+        };
+
+        items.forEach((item) => {
+          stream.subscribe(`price-${item.id}`, onPrice);
+        });
+      });
+    </script>
   </body>
 </html>
