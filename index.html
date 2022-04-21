@@ -87,18 +87,18 @@
           return this.state;
         }
 
-        changeState(diff) {
-          this.state = {
-            ...this.state,
-            ...(typeof diff === 'function' ? diff(this.state) : diff),
-          };
-          this.listeners.forEach((listener) => {
-            listener();
-          });
+        setState(state) {
+          this.state = typeof state === 'function' ? state(this.state) : state;
+          this.listeners.forEach((listener) => listener());
         }
 
-        subscribe(callback) {
-          this.listeners.push(callback);
+        subscribe(listener) {
+          this.listeners.push(listener);
+
+          return () => {
+            const index = this.listeners.indexOf(listener);
+            this.listeners.splice(index, 1);
+          };
         }
       }
 
@@ -189,9 +189,10 @@
       });
 
       setInterval(() => {
-        store.changeState({
+        store.setState((state) => ({
+          ...state,
           time: new Date(),
-        });
+        }));
       }, 1000);
 
       const stream = {
@@ -210,10 +211,14 @@
       };
 
       api.get('/items').then((items) => {
-        store.changeState({ items });
+        store.setState((state) => ({
+          ...state,
+          items,
+        }));
 
         const onPrice = (data) => {
-          store.changeState((state) => ({
+          store.setState((state) => ({
+            ...state,
             items: state.items.map((item) => {
               if (item.id === data.id) {
                 return {
