@@ -46,22 +46,7 @@
         },
       };
 
-      const stream = {
-        subscribe(channel, listener) {
-          const match = /price-(\d+)/.exec(channel);
-
-          if (match) {
-            setInterval(() => {
-              listener({
-                id: parseInt(match[1]),
-                price: Math.floor(Math.random() * 10 + 1),
-              });
-            }, 1000);
-          }
-        },
-      };
-
-      let state = {
+      const initialState = {
         time: new Date(),
         items: null,
         placeholders: [
@@ -92,22 +77,49 @@
         ],
       };
 
+      class Store {
+        constructor(initialState) {
+          this.state = initialState;
+          this.listeners = [];
+        }
+
+        getState() {
+          return this.state;
+        }
+
+        changeState(diff) {
+          this.state = {
+            ...this.state,
+            ...(typeof diff === 'function' ? diff(this.state) : diff),
+          };
+          this.listeners.forEach((listener) => {
+            listener();
+          });
+        }
+
+        subscribe(callback) {
+          this.listeners.push(callback);
+        }
+      }
+
+      const store = new Store(initialState);
+
       function App({ state }) {
         return (
           <div className="wrapper">
-            <Header />
-            <Items items={state.items} />
+            <Header state={state} />
+            <Items items={state.items} placeholders={state.placeholders} />
           </div>
-        )
+        );
       }
 
-      function Header() {
+      function Header({ state }) {
         return (
           <header className="header">
             <Logo />
             <Clock time={state.time} />
           </header>
-        )
+        );
       }
 
       function Logo() {
@@ -122,7 +134,7 @@
             <span className="value">{time.toLocaleTimeString()}</span>
             <img className="icon" src={isDay ? 'images/sun.png' : 'images/moon.png'} alt="" />
           </div>
-        )
+        );
       }
 
       function Placeholder({ placeholder }) {
@@ -136,21 +148,25 @@
       function Loading({ placeholders }) {
         return (
           <div className="placeholder">
-            { placeholders.map((placeholder) => <Placeholder placeholder={placeholder} key={placeholder.id} />) }
+            {placeholders.map((placeholder) => (
+              <Placeholder placeholder={placeholder} key={placeholder.id} />
+            ))}
           </div>
-        )
+        );
       }
 
-      function Items({ items }) {
+      function Items({items, placeholders}) {
         if (items === null) {
-          return <Loading placeholders={ state.placeholders }/>
+          return <Loading placeholders={placeholders} />;
         }
 
         return (
           <div className="items">
-            { items.map((item) => <Item item={item} key={item.id} />) }
+            {items.map((item) => (
+              <Item item={item} key={item.id} />
+            ))}
           </div>
-        )
+        );
       }
 
       function Item({ item }) {
@@ -159,33 +175,45 @@
             <h2 className="item_name">{item.name}</h2>
             <div className="item_price">{item.price}</div>
           </article>
-        )
+        );
       }
 
       function renderView(state) {
-        ReactDOM.render(<App state={state}/>, document.querySelector('#app'));
+        ReactDOM.render(<App state={state} />, document.querySelector('#app'));
       }
 
-      renderView(state);
+      renderView(store.getState());
+
+      store.subscribe(() => {
+        renderView(store.getState());
+      });
 
       setInterval(() => {
-        state = {
-          ...state,
+        store.changeState({
           time: new Date(),
-        };
-        renderView(state);
+        });
       }, 1000);
 
+      const stream = {
+        subscribe(channel, listener) {
+          const match = /price-(\d+)/.exec(channel);
+
+          if (match) {
+            setInterval(() => {
+              listener({
+                id: parseInt(match[1]),
+                price: Math.floor(Math.random() * 10 + 1),
+              });
+            }, 1000);
+          }
+        },
+      };
+
       api.get('/items').then((items) => {
-        state = {
-          ...state,
-          items,
-        };
-        renderView(state);
+        store.changeState({ items });
 
         const onPrice = (data) => {
-          state = {
-            ...state,
+          store.changeState((state) => ({
             items: state.items.map((item) => {
               if (item.id === data.id) {
                 return {
@@ -195,8 +223,7 @@
               }
               return item;
             }),
-          };
-          renderView(state);
+          }));
         };
 
         items.forEach((item) => {
