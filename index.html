@@ -188,11 +188,37 @@
         renderView(store.getState());
       });
 
-      setInterval(() => {
-        store.setState((state) => ({
+      function setTime(state, params) {
+        return {
           ...state,
-          time: new Date(),
-        }));
+          time: params.time,
+        };
+      }
+
+      function setItems(state, params) {
+        return {
+          ...state,
+          items: params.items,
+        };
+      }
+
+      function changeItemPrice(state, params) {
+        return {
+          ...state,
+          items: state.items.map((item) => {
+            if (item.id === params.id) {
+              return {
+                ...item,
+                price: params.price,
+              };
+            }
+            return item;
+          }),
+        };
+      }
+
+      setInterval(() => {
+        store.setState((state) => setTime(state, { time: new Date() }));
       }, 1000);
 
       const stream = {
@@ -211,28 +237,12 @@
       };
 
       api.get('/items').then((items) => {
-        store.setState((state) => ({
-          ...state,
-          items,
-        }));
-
-        const onPrice = (data) => {
-          store.setState((state) => ({
-            ...state,
-            items: state.items.map((item) => {
-              if (item.id === data.id) {
-                return {
-                  ...item,
-                  price: data.price,
-                };
-              }
-              return item;
-            }),
-          }));
-        };
+        store.setState((state) => setItems(state, { items }));
 
         items.forEach((item) => {
-          stream.subscribe(`price-${item.id}`, onPrice);
+          stream.subscribe(`price-${item.id}`, (data) => {
+            store.setState((state) => changeItemPrice(state, { id: data.id, price: data.price }));
+          });
         });
       });
     </script>
