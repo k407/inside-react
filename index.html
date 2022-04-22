@@ -188,26 +188,26 @@
         renderView(store.getState());
       });
 
-      function appReducer(state, action, params) {
-        switch (action) {
+      function appReducer(state, action) {
+        switch (action.type) {
           case 'setTime':
             return {
               ...state,
-              time: params.time,
+              time: action.time,
             };
           case 'setItems':
             return {
               ...state,
-              items: params.items,
+              items: action.items,
             };
           case 'changeItemPrice':
             return {
               ...state,
               items: state.items.map((item) => {
-                if (item.id === params.id) {
+                if (item.id === action.id) {
                   return {
                     ...item,
-                    price: params.price,
+                    price: action.price,
                   };
                 }
                 return item;
@@ -219,7 +219,7 @@
       }
 
       setInterval(() => {
-        store.setState((state) => appReducer(state, 'setTime', { time: new Date() }));
+        store.setState((state) => appReducer(state, { type: 'setTime', time: new Date() }));
       }, 1000);
 
       const stream = {
@@ -238,11 +238,11 @@
       };
 
       api.get('/items').then((items) => {
-        store.setState((state) => appReducer(state, 'setItems', { items }));
+        store.setState((state) => appReducer(state, { type: 'setItems', items }));
 
         items.forEach((item) => {
           stream.subscribe(`price-${item.id}`, (data) => {
-            store.setState((state) => appReducer(state, 'changeItemPrice', { id: data.id, price: data.price }));
+            store.setState((state) => appReducer(state, { type: 'changeItemPrice', id: data.id, price: data.price }));
           });
         });
       });
