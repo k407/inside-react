@@ -81,6 +81,28 @@
       const SET_ITEMS = 'SET_ITEMS';
       const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
 
+      function createSetTimeAction(time) {
+        return {
+          type: SET_TIME,
+          time,
+        };
+      }
+
+      function createSetItemsAction(items) {
+        return {
+          type: SET_ITEMS,
+          items,
+        };
+      }
+
+      function createChangeItemPriceAction(id, price) {
+        return {
+          type: CHANGE_ITEM_PRICE,
+          id,
+          price,
+        };
+      }
+
       function appReducer(state = initialState, action) {
         switch (action.type) {
           case SET_TIME:
@@ -224,7 +246,7 @@
       });
 
       setInterval(() => {
-        store.dispatch({ type: SET_TIME, time: new Date() });
+        store.dispatch(createSetTimeAction(new Date()));
       }, 1000);
 
       const stream = {
@@ -243,11 +265,11 @@
       };
 
       api.get('/items').then((items) => {
-        store.dispatch({ type: SET_ITEMS, items });
+        store.dispatch(createSetItemsAction(items));
 
         items.forEach((item) => {
           stream.subscribe(`price-${item.id}`, (data) => {
-            store.dispatch({ type: CHANGE_ITEM_PRICE, id: data.id, price: data.price });
+            store.dispatch(createChangeItemPriceAction(data.id, data.price));
           });
         });
       });
