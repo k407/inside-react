@@ -77,19 +77,49 @@
         ],
       };
 
+      const SET_TIME = 'SET_TIME';
+      const SET_ITEMS = 'SET_ITEMS';
+      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
+
+      function appReducer(state = initialState, action) {
+        switch (action.type) {
+          case SET_TIME:
+            return {
+              ...state,
+              time: action.time,
+            };
+          case SET_ITEMS:
+            return {
+              ...state,
+              items: action.items,
+            };
+          case CHANGE_ITEM_PRICE:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    price: action.price,
+                  };
+                }
+                return item;
+              }),
+            };
+          default:
+            return state;
+        }
+      }
+
       class Store {
-        constructor(initialState) {
-          this.state = initialState;
+        constructor(reducer, initialState) {
+          this.reducer = reducer;
+          this.state = reducer(initialState, { type: null });
           this.listeners = [];
         }
 
         getState() {
           return this.state;
-        }
-
-        setState(state) {
-          this.state = typeof state === 'function' ? state(this.state) : state;
-          this.listeners.forEach((listener) => listener());
         }
 
         subscribe(listener) {
@@ -100,9 +130,14 @@
             this.listeners.splice(index, 1);
           };
         }
+
+        dispatch(action) {
+          this.state = this.reducer(this.state, action);
+          this.listeners.forEach((listener) => listener());
+        }
       }
 
-      const store = new Store(initialState);
+      const store = new Store(appReducer);
 
       function App({ state }) {
         return (
@@ -188,42 +223,8 @@
         renderView(store.getState());
       });
 
-      const SET_TIME = 'SET_TIME';
-      const SET_ITEMS = 'SET_ITEMS';
-      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
-
-      function appReducer(state, action) {
-        switch (action.type) {
-          case SET_TIME:
-            return {
-              ...state,
-              time: action.time,
-            };
-          case SET_ITEMS:
-            return {
-              ...state,
-              items: action.items,
-            };
-          case CHANGE_ITEM_PRICE:
-            return {
-              ...state,
-              items: state.items.map((item) => {
-                if (item.id === action.id) {
-                  return {
-                    ...item,
-                    price: action.price,
-                  };
-                }
-                return item;
-              }),
-            };
-          default:
-            return state;
-        }
-      }
-
       setInterval(() => {
-        store.setState((state) => appReducer(state, { type: SET_TIME, time: new Date() }));
+        store.dispatch({ type: SET_TIME, time: new Date() });
       }, 1000);
 
       const stream = {
@@ -242,11 +243,11 @@
       };
 
       api.get('/items').then((items) => {
-        store.setState((state) => appReducer(state, { type: SET_ITEMS, items }));
+        store.dispatch({ type: SET_ITEMS, items });
 
         items.forEach((item) => {
           stream.subscribe(`price-${item.id}`, (data) => {
-            store.setState((state) => appReducer(state, { type: CHANGE_ITEM_PRICE, id: data.id, price: data.price }));
+            store.dispatch({ type: CHANGE_ITEM_PRICE, id: data.id, price: data.price });
           });
         });
       });
