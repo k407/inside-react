@@ -46,9 +46,15 @@
         },
       };
 
-      const initialState = {
+      const clockInitialState = {
         time: new Date(),
+      };
+
+      const productsInitialState = {
         items: null,
+      };
+
+      const loadingInitialState = {
         placeholders: [
           {
             id: 1,
@@ -77,10 +83,6 @@
         ],
       };
 
-      const SET_TIME = 'SET_TIME';
-      const SET_ITEMS = 'SET_ITEMS';
-      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
-
       function createSetTimeAction(time) {
         return {
           type: SET_TIME,
@@ -103,13 +105,25 @@
         };
       }
 
-      function appReducer(state = initialState, action) {
+      const SET_TIME = 'SET_TIME';
+
+      function clockReducer(state = clockInitialState, action) {
         switch (action.type) {
           case SET_TIME:
             return {
               ...state,
               time: action.time,
             };
+          default:
+            return state;
+        }
+      }
+
+      const SET_ITEMS = 'SET_ITEMS';
+      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
+
+      function productsReducer(state = productsInitialState, action) {
+        switch (action.type) {
           case SET_ITEMS:
             return {
               ...state,
@@ -131,6 +145,20 @@
           default:
             return state;
         }
+      }
+
+      function loadingReducer(state = loadingInitialState) {
+        return state;
+      }
+
+      function combineReducer(reducers) {
+        return (state = {}, action) => {
+          const result = {};
+          Object.entries(reducers).forEach(([key, reducer]) => {
+            result[key] = reducer(state[key], action);
+          });
+          return result;
+        };
       }
 
       class Store {
@@ -159,22 +187,26 @@
         }
       }
 
-      const store = new Store(appReducer);
+      const store = new Store(combineReducer({
+        clock: clockReducer,
+        products: productsReducer,
+        loading: loadingReducer,
+      }));
 
       function App({ state }) {
         return (
           <div className="wrapper">
-            <Header state={state} />
-            <Items items={state.items} placeholders={state.placeholders} />
+            <Header time={state.clock.time} />
+            <Items items={state.products.items} placeholders={state.loading.placeholders} />
           </div>
         );
       }
 
-      function Header({ state }) {
+      function Header({ time }) {
         return (
           <header className="header">
             <Logo />
-            <Clock time={state.time} />
+            <Clock time={time} />
           </header>
         );
       }
