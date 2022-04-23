@@ -316,19 +316,21 @@ function Favorite({ active, favorite, unfavorite }) {
   );
 }
 
-const favorite = (id) => {
-  api.post(`/items/${id}/favorite`).then(() => {
-    store.dispatch(createFavoriteItemAction(id));
-  });
-};
+function renderView(store) {
+  const state = store.getState();
 
-const unfavorite = (id) => {
-  api.post(`/items/${id}/unfavorite`).then(() => {
-    store.dispatch(createUnfavoriteItemAction(id));
-  });
-};
+  const favorite = (id) => {
+    api.post(`/items/${id}/favorite`).then(() => {
+      store.dispatch(createFavoriteItemAction(id));
+    });
+  };
 
-function renderView(state) {
+  const unfavorite = (id) => {
+    api.post(`/items/${id}/unfavorite`).then(() => {
+      store.dispatch(createUnfavoriteItemAction(id));
+    });
+  };
+
   ReactDOM.render(
     <App state={state} favorite={favorite} unfavorite={unfavorite} />,
     document.querySelector('#app')
@@ -336,10 +338,10 @@ function renderView(state) {
 }
 
 store.subscribe(() => {
-  renderView(store.getState());
+  renderView(store);
 });
 
-renderView(store.getState());
+renderView(store);
 
 setInterval(() => {
   store.dispatch(createSetTimeAction(new Date()));
