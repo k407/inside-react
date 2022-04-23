@@ -237,11 +237,16 @@
         })
       );
 
-      function App({ state }) {
+      function App({ state, favorite, unfavorite }) {
         return (
           <div className="wrapper">
             <Header time={state.clock.time} />
-            <Items items={state.products.items} placeholders={state.loading.placeholders} />
+            <Items
+              items={state.products.items}
+              placeholders={state.loading.placeholders}
+              favorite={favorite}
+              unfavorite={unfavorite}
+            />
           </div>
         );
       }
@@ -288,7 +293,7 @@
         );
       }
 
-      function Items({ items, placeholders }) {
+      function Items({ items, placeholders, favorite, unfavorite }) {
         if (items === null) {
           return <Loading placeholders={placeholders} />;
         }
@@ -296,29 +301,34 @@
         return (
           <div className="items">
             {items.map((item) => (
-              <Item item={item} key={item.id} />
+              <Item item={item} favorite={favorite} unfavorite={unfavorite} key={item.id} />
             ))}
           </div>
         );
       }
 
-      function Item({ item }) {
+      function Item({ item, favorite, unfavorite }) {
         return (
           <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
             <h2 className="item_name">{item.name}</h2>
             <div className="item_price">{item.price}</div>
-            <Favorite active={item.favorite} id={item.id} />
+            <Favorite
+              active={item.favorite}
+              id={item.id}
+              favorite={() => favorite(item.id)}
+              unfavorite={() => unfavorite(item.id)}
+            />
           </article>
         );
       }
 
-      function Favorite({ active, id }) {
+      function Favorite({ active, favorite, unfavorite }) {
         return active ? (
-          <button type="button" className="unfavorite" onClick={() => unfavorite(id)}>
+          <button type="button" className="unfavorite" onClick={unfavorite}>
             <img className="favorite_icon" src="images/heart-sharp.png" alt="" /> Unfavorite
           </button>
         ) : (
-          <button type="button" className="favorite" onClick={() => favorite(id)}>
+          <button type="button" className="favorite" onClick={favorite}>
             <img className="favorite_icon" src="images/heart-outline.png" alt="" /> Favorite
           </button>
         );
@@ -337,7 +347,10 @@
       };
 
       function renderView(state) {
-        ReactDOM.render(<App state={state} />, document.querySelector('#app'));
+        ReactDOM.render(
+          <App state={state} favorite={favorite} unfavorite={unfavorite} />,
+          document.querySelector('#app')
+        );
       }
 
       store.subscribe(() => {
