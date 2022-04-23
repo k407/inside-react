@@ -48,15 +48,153 @@
               throw new Error('404');
           }
         },
+        post(url) {
+          if (/^\/items\/(\d+)\/favorite$/.exec(url)) {
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve({});
+              }, 500);
+            });
+          }
+          if (/^\/items\/(\d+)\/unfavorite$/.exec(url)) {
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve({});
+              }, 500);
+            });
+          }
+          throw new Error('Unknown address');
+        },
+      };
+
+      const stream = {
+        subscribe(channel, listener) {
+          const match = /price-(\d+)/.exec(channel);
+
+          if (match) {
+            setInterval(() => {
+              listener({
+                id: parseInt(match[1]),
+                price: Math.floor(Math.random() * 10 + 1),
+              });
+            }, 400);
+          }
+        },
       };
 
       const clockInitialState = {
         time: new Date(),
       };
 
+      const SET_TIME = 'SET_TIME';
+
+      function clockReducer(state = clockInitialState, action) {
+        switch (action.type) {
+          case SET_TIME:
+            return {
+              ...state,
+              time: action.time,
+            };
+          default:
+            return state;
+        }
+      }
+
+      function createSetTimeAction(time) {
+        return {
+          type: SET_TIME,
+          time,
+        };
+      }
+
       const productsInitialState = {
         items: null,
       };
+
+      const SET_ITEMS = 'SET_ITEMS';
+      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
+      const FAVORITE_ITEM = 'FAVORITE_ITEM';
+      const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
+
+      function productsReducer(state = productsInitialState, action) {
+        switch (action.type) {
+          case SET_ITEMS:
+            return {
+              ...state,
+              items: action.items,
+            };
+          case CHANGE_ITEM_PRICE:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    price: action.price,
+                  };
+                }
+                return item;
+              }),
+            };
+          case FAVORITE_ITEM:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    favorite: true,
+                  };
+                }
+                return item;
+              }),
+            };
+          case UNFAVORITE_ITEM:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    favorite: false,
+                  };
+                }
+                return item;
+              }),
+            };
+          default:
+            return state;
+        }
+      }
+
+      function createSetItemsAction(items) {
+        return {
+          type: SET_ITEMS,
+          items,
+        };
+      }
+
+      function createChangeItemPriceAction(id, price) {
+        return {
+          type: CHANGE_ITEM_PRICE,
+          id,
+          price,
+        };
+      }
+
+      function createFavoriteItemAction(id) {
+        return {
+          type: FAVORITE_ITEM,
+          id,
+        };
+      }
+
+      function createUnfavoriteItemAction(id) {
+        return {
+          type: UNFAVORITE_ITEM,
+          id,
+        };
+      }
 
       const loadingInitialState = {
         placeholders: [
@@ -87,81 +225,15 @@
         ],
       };
 
-      function createSetTimeAction(time) {
-        return {
-          type: SET_TIME,
-          time,
-        };
-      }
-
-      function createSetItemsAction(items) {
-        return {
-          type: SET_ITEMS,
-          items,
-        };
-      }
-
-      function createChangeItemPriceAction(id, price) {
-        return {
-          type: CHANGE_ITEM_PRICE,
-          id,
-          price,
-        };
-      }
-
-      const SET_TIME = 'SET_TIME';
-
-      function clockReducer(state = clockInitialState, action) {
-        switch (action.type) {
-          case SET_TIME:
-            return {
-              ...state,
-              time: action.time,
-            };
-          default:
-            return state;
-        }
-      }
-
-      const SET_ITEMS = 'SET_ITEMS';
-      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
-      const FAVORITE_ITEM = 'FAVORITE_ITEM';
-      const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
-
-      function productsReducer(state = productsInitialState, action) {
-        switch (action.type) {
-          case SET_ITEMS:
-            return {
-              ...state,
-              items: action.items,
-            };
-          case CHANGE_ITEM_PRICE:
-            return {
-              ...state,
-              items: state.items.map((item) => {
-                if (item.id === action.id) {
-                  return {
-                    ...item,
-                    price: action.price,
-                  };
-                }
-                return item;
-              }),
-            };
-          default:
-            return state;
-        }
-      }
-
       function loadingReducer(state = loadingInitialState) {
         return state;
       }
 
       const store = Redux.createStore(
         Redux.combineReducers({
+          loading: loadingReducer,
           clock: clockReducer,
           products: productsReducer,
-          loading: loadingReducer,
         })
       );
 
@@ -235,51 +307,48 @@
           <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
             <h2 className="item_name">{item.name}</h2>
             <div className="item_price">{item.price}</div>
-            <Favorite active={item.favorite} />
+            <Favorite active={item.favorite} id={item.id} />
           </article>
         );
       }
 
-      function Favorite({ active }) {
+      function Favorite({ active, id }) {
         return active ? (
-          <button type="button" className="unfavorite">
+          <button type="button" className="unfavorite" onClick={() => unfavorite(id)}>
             <img className="favorite_icon" src="images/heart-sharp.png" alt="" /> Unfavorite
           </button>
         ) : (
-          <button type="button" className="favorite">
+          <button type="button" className="favorite" onClick={() => favorite(id)}>
             <img className="favorite_icon" src="images/heart-outline.png" alt="" /> Favorite
           </button>
         );
       }
 
+      const favorite = (id) => {
+        api.post(`/items/${id}/favorite`).then(() => {
+          store.dispatch(createFavoriteItemAction(id));
+        });
+      };
+
+      const unfavorite = (id) => {
+        api.post(`/items/${id}/unfavorite`).then(() => {
+          store.dispatch(createUnfavoriteItemAction(id));
+        });
+      };
+
       function renderView(state) {
         ReactDOM.render(<App state={state} />, document.querySelector('#app'));
       }
-
-      renderView(store.getState());
 
       store.subscribe(() => {
         renderView(store.getState());
       });
 
+      renderView(store.getState());
+
       setInterval(() => {
         store.dispatch(createSetTimeAction(new Date()));
       }, 1000);
-
-      const stream = {
-        subscribe(channel, listener) {
-          const match = /price-(\d+)/.exec(channel);
-
-          if (match) {
-            setInterval(() => {
-              listener({
-                id: parseInt(match[1]),
-                price: Math.floor(Math.random() * 10 + 1),
-              });
-            }, 1000);
-          }
-        },
-      };
 
       api.get('/items').then((items) => {
         store.dispatch(createSetItemsAction(items));
