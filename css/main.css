@@ -8,6 +8,32 @@ p {
   margin: 0.7rem 0;
 }
 
+button {
+  background-color: #f3f3f3;
+  margin-top: 1.4rem;
+  padding: 2px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  text-align: center;
+}
+
+button:hover {
+  background-color: #e8e8e8;
+}
+
+button.favorite {
+  color: black;
+}
+
+button.unfavorite {
+  color: #fd0000;
+}
+
+button .favorite_icon {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
 .wrapper {
   padding: 2rem;
   max-width: 1440px;
@@ -36,7 +62,6 @@ p {
 }
 
 .item {
-  height: 8rem;
   width: 6rem;
   margin: 1rem;
   padding: 1rem;
@@ -48,6 +73,10 @@ p {
 
 .item_price {
   font-size: 1.5rem;
+}
+
+.item_favorite {
+  background: #ffeaea;
 }
 
 .icon {

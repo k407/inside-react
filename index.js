@@ -9,16 +9,19 @@ const api = {
                 id: 1,
                 name: 'item_1',
                 price: 7,
+                favorite: true,
               },
               {
                 id: 2,
                 name: 'item_2',
                 price: 9,
+                favorite: false,
               },
               {
                 id: 3,
                 name: 'item_3',
                 price: 11,
+                favorite: false,
               },
             ]);
           }, 1000);
@@ -104,6 +107,8 @@ function clockReducer(state = clockInitialState, action) {
 
 const SET_ITEMS = 'SET_ITEMS';
 const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
+const FAVORITE_ITEM = 'FAVORITE_ITEM';
+const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
 
 function productsReducer(state = productsInitialState, action) {
   switch (action.type) {
@@ -134,11 +139,13 @@ function loadingReducer(state = loadingInitialState) {
   return state;
 }
 
-const store = Redux.createStore(Redux.combineReducers({
-  clock: clockReducer,
-  products: productsReducer,
-  loading: loadingReducer,
-}));
+const store = Redux.createStore(
+  Redux.combineReducers({
+    clock: clockReducer,
+    products: productsReducer,
+    loading: loadingReducer,
+  })
+);
 
 function App({ state }) {
   return (
@@ -191,7 +198,7 @@ function Loading({ placeholders }) {
   );
 }
 
-function Items({items, placeholders}) {
+function Items({ items, placeholders }) {
   if (items === null) {
     return <Loading placeholders={placeholders} />;
   }
@@ -207,10 +214,23 @@ function Items({items, placeholders}) {
 
 function Item({ item }) {
   return (
-    <article className="item">
+    <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
       <h2 className="item_name">{item.name}</h2>
       <div className="item_price">{item.price}</div>
+      <Favorite active={item.favorite} />
     </article>
+  );
+}
+
+function Favorite({ active }) {
+  return active ? (
+    <button type="button" className="unfavorite">
+      <img className="favorite_icon" src="images/heart-sharp.png" alt="" /> Unfavorite
+    </button>
+  ) : (
+    <button type="button" className="favorite">
+      <img className="favorite_icon" src="images/heart-outline.png" alt="" /> Favorite
+    </button>
   );
 }
 
