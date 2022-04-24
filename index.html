@@ -266,9 +266,11 @@
           <StoreContext.Consumer>
             {(store) => {
               const state = store.getState();
-              const time = state.clock.time;
+              const stateToProps = {
+                time: state.clock.time
+              };
 
-              return <Clock time={time} />;
+              return <Clock {...stateToProps} />;
             }}
           </StoreContext.Consumer>
         );
@@ -308,10 +310,12 @@
           <StoreContext.Consumer>
             {(store) => {
               const state = store.getState();
-              const items = state.products.items;
-              const placeholders = state.loading.placeholders;
+              const stateToProps = {
+                items: state.products.items,
+                placeholders: state.loading.placeholders,
+              };
 
-              return <Items items={items} placeholders={placeholders} />;
+              return <Items {...stateToProps} />;
             }}
           </StoreContext.Consumer>
         );
@@ -331,25 +335,26 @@
         );
       }
 
-      function ItemConnected({ item }) {
+      function ItemConnected(props) {
         return (
           <StoreContext.Consumer>
             {(store) => {
               const dispatch = store.dispatch;
 
-              const favorite = (id) => {
-                api.post(`/items/${id}/favorite`).then(() => {
-                  dispatch(createFavoriteItemAction(id));
-                });
+              const dispatchToProps = {
+                favorite: (id) => {
+                  api.post(`/items/${id}/favorite`).then(() => {
+                    dispatch(createFavoriteItemAction(id));
+                  });
+                },
+                unfavorite: (id) => {
+                  api.post(`/items/${id}/unfavorite`).then(() => {
+                    dispatch(createUnfavoriteItemAction(id));
+                  });
+                },
               };
 
-              const unfavorite = (id) => {
-                api.post(`/items/${id}/unfavorite`).then(() => {
-                  dispatch(createUnfavoriteItemAction(id));
-                });
-              };
-
-              return <Item item={item} favorite={favorite} unfavorite={unfavorite} />;
+              return <Item {...props} {...dispatchToProps} />;
             }}
           </StoreContext.Consumer>
         );
