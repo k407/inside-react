@@ -11,6 +11,7 @@
     <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script crossorigin src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
@@ -237,46 +238,6 @@
         })
       );
 
-      const StoreContext = React.createContext();
-
-      function connect(mapStateToProps, mapDispatchToProps) {
-        return (WrappedComponent) => {
-          return (props) => {
-            return (
-              <StoreContext.Consumer>
-                {(store) => {
-                  return React.createElement(
-                    class extends React.Component {
-                      render() {
-                        const stateToProps = mapStateToProps ? mapStateToProps(store.getState()) : {};
-                        const dispatchToProps = mapDispatchToProps ? mapDispatchToProps(store.dispatch) : {};
-                        return (
-                          <WrappedComponent
-                            {...this.props}
-                            {...stateToProps}
-                            {...dispatchToProps}
-                          />
-                        )
-                      }
-                      componentDidMount() {
-                        this.unsubscribe = store.subscribe(this.handleChange.bind(this));
-                      }
-                      componentWillUnmount() {
-                        this.unsubscribe();
-                      }
-                      handleChange() {
-                        this.forceUpdate();
-                      }
-                    },
-                    props
-                  );
-                }}
-              </StoreContext.Consumer>
-            );
-          };
-        };
-      }
-
       function App() {
         return (
           <div className="wrapper">
@@ -303,7 +264,7 @@
         time: state.clock.time,
       });
 
-      const ClockConnected = connect(clockMapStateToProps)(Clock);
+      const ClockConnected = ReactRedux.connect(clockMapStateToProps)(Clock);
 
       function Clock({ time }) {
         const isDay = time.getHours() >= 7 && time.getHours() <= 21;
@@ -339,7 +300,7 @@
         placeholders: state.loading.placeholders,
       });
 
-      const ItemsConnected = connect(itemsMapStateToProps)(Items);
+      const ItemsConnected = ReactRedux.connect(itemsMapStateToProps)(Items);
 
       function Items({ items, placeholders }) {
         if (items === null) {
@@ -368,7 +329,7 @@
         },
       });
 
-      const ItemConnected = connect(null, itemMapDispatchToProps)(Item);
+      const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
 
       function Item({ item, favorite, unfavorite }) {
         return (
@@ -398,9 +359,9 @@
       }
 
       ReactDOM.render(
-        <StoreContext.Provider value={store}>
+        <ReactRedux.Provider store={store}>
           <App />
-        </StoreContext.Provider>,
+        </ReactRedux.Provider>,
         document.querySelector('#app')
       );
 
