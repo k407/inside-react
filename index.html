@@ -237,20 +237,22 @@
         })
       );
 
-      function App({ store }) {
+      const StoreContext = React.createContext();
+
+      function App() {
         return (
           <div className="wrapper">
-            <Header store={store} />
-            <ItemsConnected store={store} />
+            <Header />
+            <ItemsConnected />
           </div>
         );
       }
 
-      function Header({ store }) {
+      function Header() {
         return (
           <header className="header">
             <Logo />
-            <ClockConnected store={store} />
+            <ClockConnected />
           </header>
         );
       }
@@ -259,11 +261,17 @@
         return <img className="logo" src="images/logo.png" alt="" />;
       }
 
-      function ClockConnected({ store }) {
-        const state = store.getState();
-        const time = state.clock.time;
+      function ClockConnected() {
+        return (
+          <StoreContext.Consumer>
+            {(store) => {
+              const state = store.getState();
+              const time = state.clock.time;
 
-        return <Clock time={time} />;
+              return <Clock time={time} />;
+            }}
+          </StoreContext.Consumer>
+        );
       }
 
       function Clock({ time }) {
@@ -295,21 +303,21 @@
         );
       }
 
-      function ItemsConnected({ store }) {
-        const state = store.getState();
-        const items = state.products.items;
-        const placeholders = state.loading.placeholders;
-
+      function ItemsConnected() {
         return (
-          <Items
-            items={items}
-            placeholders={placeholders}
-            store={store}
-          />
+          <StoreContext.Consumer>
+            {(store) => {
+              const state = store.getState();
+              const items = state.products.items;
+              const placeholders = state.loading.placeholders;
+
+              return <Items items={items} placeholders={placeholders} />;
+            }}
+          </StoreContext.Consumer>
         );
       }
 
-      function Items({ items, placeholders, store }) {
+      function Items({ items, placeholders }) {
         if (items === null) {
           return <Loading placeholders={placeholders} />;
         }
@@ -317,28 +325,34 @@
         return (
           <div className="items">
             {items.map((item) => (
-              <ItemConnected item={item} store={store} key={item.id} />
+              <ItemConnected item={item} key={item.id} />
             ))}
           </div>
         );
       }
 
-      function ItemConnected({ store, item }) {
-        const dispatch = store.dispatch;
+      function ItemConnected({ item }) {
+        return (
+          <StoreContext.Consumer>
+            {(store) => {
+              const dispatch = store.dispatch;
 
-        const favorite = (id) => {
-          api.post(`/items/${id}/favorite`).then(() => {
-            dispatch(createFavoriteItemAction(id));
-          });
-        };
+              const favorite = (id) => {
+                api.post(`/items/${id}/favorite`).then(() => {
+                  dispatch(createFavoriteItemAction(id));
+                });
+              };
 
-        const unfavorite = (id) => {
-          api.post(`/items/${id}/unfavorite`).then(() => {
-            dispatch(createUnfavoriteItemAction(id));
-          });
-        };
+              const unfavorite = (id) => {
+                api.post(`/items/${id}/unfavorite`).then(() => {
+                  dispatch(createUnfavoriteItemAction(id));
+                });
+              };
 
-        return <Item item={item} favorite={favorite} unfavorite={unfavorite} key={item.id} />;
+              return <Item item={item} favorite={favorite} unfavorite={unfavorite} />;
+            }}
+          </StoreContext.Consumer>
+        );
       }
 
       function Item({ item, favorite, unfavorite }) {
@@ -370,7 +384,9 @@
 
       function renderView(store) {
         ReactDOM.render(
-          <App store={store} />,
+          <StoreContext.Provider value={store}>
+            <App />
+          </StoreContext.Provider>,
           document.querySelector('#app')
         );
       }
