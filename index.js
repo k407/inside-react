@@ -219,31 +219,33 @@ const store = Redux.createStore(
   })
 );
 
-function App({ state, favorite, unfavorite }) {
+function App({ store }) {
   return (
     <div className="wrapper">
-      <Header time={state.clock.time} />
-      <Items
-        items={state.products.items}
-        placeholders={state.loading.placeholders}
-        favorite={favorite}
-        unfavorite={unfavorite}
-      />
+      <Header store={store} />
+      <ItemsConnected store={store} />
     </div>
   );
 }
 
-function Header({ time }) {
+function Header({ store }) {
   return (
     <header className="header">
       <Logo />
-      <Clock time={time} />
+      <ClockConnected store={store} />
     </header>
   );
 }
 
 function Logo() {
   return <img className="logo" src="images/logo.png" alt="" />;
+}
+
+function ClockConnected({ store }) {
+  const state = store.getState();
+  const time = state.clock.time;
+
+  return <Clock time={time} />;
 }
 
 function Clock({ time }) {
@@ -275,7 +277,21 @@ function Loading({ placeholders }) {
   );
 }
 
-function Items({ items, placeholders, favorite, unfavorite }) {
+function ItemsConnected({ store }) {
+  const state = store.getState();
+  const items = state.products.items;
+  const placeholders = state.loading.placeholders;
+
+  return (
+    <Items
+      items={items}
+      placeholders={placeholders}
+      store={store}
+    />
+  );
+}
+
+function Items({ items, placeholders, store }) {
   if (items === null) {
     return <Loading placeholders={placeholders} />;
   }
@@ -283,10 +299,28 @@ function Items({ items, placeholders, favorite, unfavorite }) {
   return (
     <div className="items">
       {items.map((item) => (
-        <Item item={item} favorite={favorite} unfavorite={unfavorite} key={item.id} />
+        <ItemConnected item={item} store={store} key={item.id} />
       ))}
     </div>
   );
+}
+
+function ItemConnected({ store, item }) {
+  const dispatch = store.dispatch;
+
+  const favorite = (id) => {
+    api.post(`/items/${id}/favorite`).then(() => {
+      dispatch(createFavoriteItemAction(id));
+    });
+  };
+
+  const unfavorite = (id) => {
+    api.post(`/items/${id}/unfavorite`).then(() => {
+      dispatch(createUnfavoriteItemAction(id));
+    });
+  };
+
+  return <Item item={item} favorite={favorite} unfavorite={unfavorite} key={item.id} />;
 }
 
 function Item({ item, favorite, unfavorite }) {
@@ -317,22 +351,8 @@ function Favorite({ active, favorite, unfavorite }) {
 }
 
 function renderView(store) {
-  const state = store.getState();
-
-  const favorite = (id) => {
-    api.post(`/items/${id}/favorite`).then(() => {
-      store.dispatch(createFavoriteItemAction(id));
-    });
-  };
-
-  const unfavorite = (id) => {
-    api.post(`/items/${id}/unfavorite`).then(() => {
-      store.dispatch(createUnfavoriteItemAction(id));
-    });
-  };
-
   ReactDOM.render(
-    <App state={state} favorite={favorite} unfavorite={unfavorite} />,
+    <App store={store} />,
     document.querySelector('#app')
   );
 }
