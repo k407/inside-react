@@ -239,6 +239,23 @@
 
       const StoreContext = React.createContext();
 
+      function connect(mapStateToProps, mapDispatchToProps, WrappedComponent) {
+        return (props) => {
+          return (
+            <StoreContext.Consumer>
+              {(store) => {
+                const state = store.getState();
+                const dispatch = store.dispatch;
+                const stateToProps = mapStateToProps ? mapStateToProps(state) : {};
+                const dispatchToProps = mapDispatchToProps ? mapDispatchToProps(dispatch) : {};
+
+                return <WrappedComponent {...props} {...stateToProps} {...dispatchToProps} />;
+              }}
+            </StoreContext.Consumer>
+          );
+        };
+      }
+
       function App() {
         return (
           <div className="wrapper">
@@ -261,20 +278,11 @@
         return <img className="logo" src="images/logo.png" alt="" />;
       }
 
-      function ClockConnected() {
-        return (
-          <StoreContext.Consumer>
-            {(store) => {
-              const state = store.getState();
-              const stateToProps = {
-                time: state.clock.time
-              };
+      const clockMapStateToProps = (state) => ({
+        time: state.clock.time,
+      });
 
-              return <Clock {...stateToProps} />;
-            }}
-          </StoreContext.Consumer>
-        );
-      }
+      const ClockConnected = connect(clockMapStateToProps,null, Clock);
 
       function Clock({ time }) {
         const isDay = time.getHours() >= 7 && time.getHours() <= 21;
@@ -305,21 +313,12 @@
         );
       }
 
-      function ItemsConnected() {
-        return (
-          <StoreContext.Consumer>
-            {(store) => {
-              const state = store.getState();
-              const stateToProps = {
-                items: state.products.items,
-                placeholders: state.loading.placeholders,
-              };
+      const itemsMapStateToProps = (state) => ({
+        items: state.products.items,
+        placeholders: state.loading.placeholders,
+      });
 
-              return <Items {...stateToProps} />;
-            }}
-          </StoreContext.Consumer>
-        );
-      }
+      const ItemsConnected = connect(itemsMapStateToProps, null, Items);
 
       function Items({ items, placeholders }) {
         if (items === null) {
@@ -335,30 +334,20 @@
         );
       }
 
-      function ItemConnected(props) {
-        return (
-          <StoreContext.Consumer>
-            {(store) => {
-              const dispatch = store.dispatch;
+      const itemMapDispatchToProps = (dispatch) => ({
+        favorite: (id) => {
+          api.post(`/items/${id}/favorite`).then(() => {
+            dispatch(createFavoriteItemAction(id));
+          });
+        },
+        unfavorite: (id) => {
+          api.post(`/items/${id}/unfavorite`).then(() => {
+            dispatch(createUnfavoriteItemAction(id));
+          });
+        },
+      });
 
-              const dispatchToProps = {
-                favorite: (id) => {
-                  api.post(`/items/${id}/favorite`).then(() => {
-                    dispatch(createFavoriteItemAction(id));
-                  });
-                },
-                unfavorite: (id) => {
-                  api.post(`/items/${id}/unfavorite`).then(() => {
-                    dispatch(createUnfavoriteItemAction(id));
-                  });
-                },
-              };
-
-              return <Item {...props} {...dispatchToProps} />;
-            }}
-          </StoreContext.Consumer>
-        );
-      }
+      const ItemConnected = connect(null, itemMapDispatchToProps, Item);
 
       function Item({ item, favorite, unfavorite }) {
         return (
