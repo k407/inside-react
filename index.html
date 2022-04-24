@@ -239,20 +239,22 @@
 
       const StoreContext = React.createContext();
 
-      function connect(mapStateToProps, mapDispatchToProps, WrappedComponent) {
-        return (props) => {
-          return (
-            <StoreContext.Consumer>
-              {(store) => {
-                const state = store.getState();
-                const dispatch = store.dispatch;
-                const stateToProps = mapStateToProps ? mapStateToProps(state) : {};
-                const dispatchToProps = mapDispatchToProps ? mapDispatchToProps(dispatch) : {};
+      function connect(mapStateToProps, mapDispatchToProps) {
+        return (WrappedComponent) => {
+          return (props) => {
+            return (
+              <StoreContext.Consumer>
+                {(store) => {
+                  const state = store.getState();
+                  const dispatch = store.dispatch;
+                  const stateToProps = mapStateToProps ? mapStateToProps(state) : {};
+                  const dispatchToProps = mapDispatchToProps ? mapDispatchToProps(dispatch) : {};
 
-                return <WrappedComponent {...props} {...stateToProps} {...dispatchToProps} />;
-              }}
-            </StoreContext.Consumer>
-          );
+                  return <WrappedComponent {...props} {...stateToProps} {...dispatchToProps} />;
+                }}
+              </StoreContext.Consumer>
+            );
+          };
         };
       }
 
@@ -282,7 +284,7 @@
         time: state.clock.time,
       });
 
-      const ClockConnected = connect(clockMapStateToProps,null, Clock);
+      const ClockConnected = connect(clockMapStateToProps)(Clock);
 
       function Clock({ time }) {
         const isDay = time.getHours() >= 7 && time.getHours() <= 21;
@@ -318,7 +320,7 @@
         placeholders: state.loading.placeholders,
       });
 
-      const ItemsConnected = connect(itemsMapStateToProps, null, Items);
+      const ItemsConnected = connect(itemsMapStateToProps)(Items);
 
       function Items({ items, placeholders }) {
         if (items === null) {
@@ -347,7 +349,7 @@
         },
       });
 
-      const ItemConnected = connect(null, itemMapDispatchToProps, Item);
+      const ItemConnected = connect(null, itemMapDispatchToProps)(Item);
 
       function Item({ item, favorite, unfavorite }) {
         return (
