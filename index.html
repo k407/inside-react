@@ -253,7 +253,7 @@
         return (
           <div className="wrapper">
             <Header />
-            <ItemsConnected />
+            <ItemsContainerConnected />
           </div>
         );
       }
@@ -314,19 +314,22 @@
         );
       }
 
-      const itemsMapStateToProps = (state) => ({
+      const itemsContainerMapStateToProps = (state) => ({
         items: state.products.items,
         loaded: state.products.items !== null,
         placeholders: state.loading.placeholders,
       });
 
-      const itemsMapDispatchToProps = {
+      const itemsContainerMapDispatchToProps = {
         load: createLoadItemsAsyncAction,
       };
 
-      const ItemsConnected = ReactRedux.connect(itemsMapStateToProps, itemsMapDispatchToProps)(Items);
+      const ItemsContainerConnected = ReactRedux.connect(
+        itemsContainerMapStateToProps,
+        itemsContainerMapDispatchToProps
+      )(ItemsContainer);
 
-      function Items({ items, load, loaded, placeholders }) {
+      function ItemsContainer({ items, load, loaded, placeholders }) {
         React.useEffect(() => {
           if (!loaded) {
             load();
@@ -336,17 +339,34 @@
           return <Loading placeholders={placeholders} />;
         }
 
+        return <Items items={items} />;
+      }
+
+      function Items({ items }) {
         return (
           <div className="items">
             {items.map((item) => (
-              <ItemConnected item={item} key={item.id} />
+              <ItemContainerConnected item={item} key={item.id} />
             ))}
           </div>
         );
       }
 
-      const itemMapDispatchToProps = {
+      const itemContainerMapDispatchToProps = {
         subscribe: createSubscribeToItemPriceAction,
+      };
+
+      const ItemContainerConnected = ReactRedux.connect(null, itemContainerMapDispatchToProps)(ItemContainer);
+
+      function ItemContainer({ item, subscribe }) {
+        React.useEffect(() => {
+          return subscribe(item.id);
+        }, [item.id]);
+
+        return <ItemConnected item={item} />;
+      }
+
+      const itemMapDispatchToProps = {
         favorite: createFavoriteAsyncAction,
         unfavorite: createUnfavoriteAsyncAction,
       };
@@ -354,10 +374,6 @@
       const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
 
       function Item({ item, subscribe, favorite, unfavorite }) {
-        React.useEffect(() => {
-          return subscribe(item.id);
-        }, [item.id]);
-
         return (
           <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
             <h2 className="item_name">{item.name}</h2>
