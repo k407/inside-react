@@ -74,12 +74,13 @@
           const match = /price-(\d+)/.exec(channel);
 
           if (match) {
-            setInterval(() => {
+            const interval = setInterval(() => {
               listener({
                 id: parseInt(match[1]),
                 price: Math.floor(Math.random() * 10 + 1),
               });
             }, 400);
+            return () => clearInterval(interval);
           }
         },
       };
@@ -151,11 +152,27 @@
         };
       }
 
+      function createLoadItemsAsyncAction(id) {
+        return (dispatch, getState, { api }) => {
+          api.get('/items').then((items) => {
+            dispatch(createSetItemsAction(items));
+          });
+        };
+      }
+
       function createChangeItemPriceAction(id, price) {
         return {
           type: CHANGE_ITEM_PRICE,
           id,
           price,
+        };
+      }
+
+      function createSubscribeToItemPriceAction(id) {
+        return (dispatch, getState, { stream }) => {
+          return stream.subscribe(`price-${id}`, (data) => {
+            dispatch(createChangeItemPriceAction(data.id, data.price));
+          });
         };
       }
 
@@ -304,19 +321,7 @@
       });
 
       const itemsMapDispatchToProps = {
-        load: () => {
-          return (dispatch, getState, { api, stream }) => {
-            api.get('/items').then((items) => {
-              dispatch(createSetItemsAction(items));
-
-              items.forEach((item) => {
-                stream.subscribe(`price-${item.id}`, (data) => {
-                  dispatch(createChangeItemPriceAction(data.id, data.price));
-                });
-              });
-            });
-          };
-        },
+        load: createLoadItemsAsyncAction,
       };
 
       const ItemsConnected = ReactRedux.connect(itemsMapStateToProps, itemsMapDispatchToProps)(Items);
@@ -341,13 +346,18 @@
       }
 
       const itemMapDispatchToProps = {
+        subscribe: createSubscribeToItemPriceAction,
         favorite: createFavoriteAsyncAction,
         unfavorite: createUnfavoriteAsyncAction,
       };
 
       const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
 
-      function Item({ item, favorite, unfavorite }) {
+      function Item({ item, subscribe, favorite, unfavorite }) {
+        React.useEffect(() => {
+          return subscribe(item.id);
+        }, [item.id]);
+
         return (
           <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
             <h2 className="item_name">{item.name}</h2>
