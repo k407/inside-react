@@ -12,6 +12,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script crossorigin src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js"></script>
+    <script crossorigin src="https://unpkg.com/redux-thunk@2.1.0/dist/redux-thunk.min.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
@@ -246,16 +247,7 @@
         return state;
       }
 
-      function functionalActionSupport({ dispatch }) {
-        return function (next) {
-          return function (action) {
-            if (typeof action === 'function') {
-              return action(dispatch);
-            }
-            return next(action);
-          };
-        };
-      }
+      const thunk = ReduxThunk.default;
 
       const store = Redux.createStore(
         Redux.combineReducers({
@@ -263,7 +255,7 @@
           clock: clockReducer,
           products: productsReducer,
         }),
-        Redux.applyMiddleware(functionalActionSupport)
+        Redux.applyMiddleware(thunk)
       );
 
       function App() {
