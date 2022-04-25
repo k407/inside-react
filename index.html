@@ -190,10 +190,26 @@
         };
       }
 
+      function createFavoriteAsyncAction(id) {
+        return (dispatch) => {
+          api.post(`/items/${id}/favorite`).then(() => {
+            dispatch(createFavoriteItemAction(id));
+          });
+        };
+      }
+
       function createUnfavoriteItemAction(id) {
         return {
           type: UNFAVORITE_ITEM,
           id,
+        };
+      }
+
+      function createUnfavoriteAsyncAction(id) {
+        return (dispatch) => {
+          api.post(`/items/${id}/unfavorite`).then(() => {
+            dispatch(createUnfavoriteItemAction(id));
+          });
         };
       }
 
@@ -230,12 +246,24 @@
         return state;
       }
 
+      function functionalActionSupport({ dispatch }) {
+        return function (next) {
+          return function (action) {
+            if (typeof action === 'function') {
+              return action(dispatch);
+            }
+            return next(action);
+          };
+        };
+      }
+
       const store = Redux.createStore(
         Redux.combineReducers({
           loading: loadingReducer,
           clock: clockReducer,
           products: productsReducer,
-        })
+        }),
+        Redux.applyMiddleware(functionalActionSupport)
       );
 
       function App() {
@@ -316,18 +344,10 @@
         );
       }
 
-      const itemMapDispatchToProps = (dispatch) => ({
-        favorite: (id) => {
-          api.post(`/items/${id}/favorite`).then(() => {
-            dispatch(createFavoriteItemAction(id));
-          });
-        },
-        unfavorite: (id) => {
-          api.post(`/items/${id}/unfavorite`).then(() => {
-            dispatch(createUnfavoriteItemAction(id));
-          });
-        },
-      });
+      const itemMapDispatchToProps = {
+        favorite: createFavoriteAsyncAction,
+        unfavorite: createUnfavoriteAsyncAction,
+      };
 
       const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
 
