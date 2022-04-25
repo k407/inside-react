@@ -8,12 +8,12 @@
     <link rel="icon" href="favicon.ico">
     <title>Document</title>
     <link rel="stylesheet" href="css/main.css">
-    <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
-    <script crossorigin src="https://unpkg.com/redux@latest/dist/redux.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js"></script>
-    <script crossorigin src="https://unpkg.com/redux-thunk@2.1.0/dist/redux-thunk.min.js"></script>
-    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/redux@latest/dist/redux.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js" crossorigin></script>
+    <script src="https://unpkg.com/redux-thunk@2.1.0/dist/redux-thunk.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
   </head>
   <body>
     <div id="app"></div>
@@ -83,31 +83,6 @@
           }
         },
       };
-
-      const clockInitialState = {
-        time: new Date(),
-      };
-
-      const SET_TIME = 'SET_TIME';
-
-      function clockReducer(state = clockInitialState, action) {
-        switch (action.type) {
-          case SET_TIME:
-            return {
-              ...state,
-              time: action.time,
-            };
-          default:
-            return state;
-        }
-      }
-
-      function createSetTimeAction(time) {
-        return {
-          type: SET_TIME,
-          time,
-        };
-      }
 
       const productsInitialState = {
         items: null,
@@ -252,7 +227,6 @@
       const store = Redux.createStore(
         Redux.combineReducers({
           loading: loadingReducer,
-          clock: clockReducer,
           products: productsReducer,
         }),
         Redux.applyMiddleware(thunk.withExtraArgument({ api }))
@@ -271,7 +245,7 @@
         return (
           <header className="header">
             <Logo />
-            <ClockConnected />
+            <ClockContainer />
           </header>
         );
       }
@@ -280,11 +254,19 @@
         return <img className="logo" src="images/logo.png" alt="" />;
       }
 
-      const clockMapStateToProps = (state) => ({
-        time: state.clock.time,
-      });
+      function ClockContainer() {
+        const [time, setTime] = React.useState(new Date());
 
-      const ClockConnected = ReactRedux.connect(clockMapStateToProps)(Clock);
+        React.useEffect(() => {
+          const interval = setInterval(() => {
+            setTime(new Date());
+          }, 1000);
+
+          return () => clearInterval(interval);
+        }, [setTime]);
+
+        return <Clock time={time} />;
+      }
 
       function Clock({ time }) {
         const isDay = time.getHours() >= 7 && time.getHours() <= 21;
@@ -376,10 +358,6 @@
         </ReactRedux.Provider>,
         document.querySelector('#app')
       );
-
-      setInterval(() => {
-        store.dispatch(createSetTimeAction(new Date()));
-      }, 1000);
 
       api.get('/items').then((items) => {
         store.dispatch(createSetItemsAction(items));
