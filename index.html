@@ -192,7 +192,7 @@
       }
 
       function createFavoriteAsyncAction(id) {
-        return (dispatch) => {
+        return (dispatch, getState, { api }) => {
           api.post(`/items/${id}/favorite`).then(() => {
             dispatch(createFavoriteItemAction(id));
           });
@@ -207,7 +207,7 @@
       }
 
       function createUnfavoriteAsyncAction(id) {
-        return (dispatch) => {
+        return (dispatch, getState, { api }) => {
           api.post(`/items/${id}/unfavorite`).then(() => {
             dispatch(createUnfavoriteItemAction(id));
           });
@@ -255,7 +255,7 @@
           clock: clockReducer,
           products: productsReducer,
         }),
-        Redux.applyMiddleware(thunk)
+        Redux.applyMiddleware(thunk.withExtraArgument({ api }))
       );
 
       function App() {
