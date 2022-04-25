@@ -229,7 +229,7 @@
           loading: loadingReducer,
           products: productsReducer,
         }),
-        Redux.applyMiddleware(thunk.withExtraArgument({ api }))
+        Redux.applyMiddleware(thunk.withExtraArgument({ api, stream }))
       );
 
       function App() {
@@ -299,13 +299,35 @@
 
       const itemsMapStateToProps = (state) => ({
         items: state.products.items,
+        loaded: state.products.items !== null,
         placeholders: state.loading.placeholders,
       });
 
-      const ItemsConnected = ReactRedux.connect(itemsMapStateToProps)(Items);
+      const itemsMapDispatchToProps = {
+        load: () => {
+          return (dispatch, getState, { api, stream }) => {
+            api.get('/items').then((items) => {
+              dispatch(createSetItemsAction(items));
 
-      function Items({ items, placeholders }) {
-        if (items === null) {
+              items.forEach((item) => {
+                stream.subscribe(`price-${item.id}`, (data) => {
+                  dispatch(createChangeItemPriceAction(data.id, data.price));
+                });
+              });
+            });
+          };
+        },
+      };
+
+      const ItemsConnected = ReactRedux.connect(itemsMapStateToProps, itemsMapDispatchToProps)(Items);
+
+      function Items({ items, load, loaded, placeholders }) {
+        React.useEffect(() => {
+          if (!loaded) {
+            load();
+          }
+        }, [!loaded]);
+        if (!loaded) {
           return <Loading placeholders={placeholders} />;
         }
 
@@ -358,16 +380,6 @@
         </ReactRedux.Provider>,
         document.querySelector('#app')
       );
-
-      api.get('/items').then((items) => {
-        store.dispatch(createSetItemsAction(items));
-
-        items.forEach((item) => {
-          stream.subscribe(`price-${item.id}`, (data) => {
-            store.dispatch(createChangeItemPriceAction(data.id, data.price));
-          });
-        });
-      });
     </script>
   </body>
 </html>
