@@ -24,26 +24,30 @@
             case '/items':
               return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                  resolve([
-                    {
-                      id: 1,
-                      name: 'item_1',
-                      price: 7,
-                      favorite: true,
-                    },
-                    {
-                      id: 2,
-                      name: 'item_2',
-                      price: 9,
-                      favorite: false,
-                    },
-                    {
-                      id: 3,
-                      name: 'item_3',
-                      price: 11,
-                      favorite: false,
-                    },
-                  ]);
+                  if (Math.random() > 0.25) {
+                    resolve([
+                      {
+                        id: 1,
+                        name: 'item_1',
+                        price: 7,
+                        favorite: true,
+                      },
+                      {
+                        id: 2,
+                        name: 'item_2',
+                        price: 9,
+                        favorite: false,
+                      },
+                      {
+                        id: 3,
+                        name: 'item_3',
+                        price: 11,
+                        favorite: false,
+                      },
+                    ]);
+                  } else {
+                    reject(new Error('Connection error'));
+                  }
                 }, 1000);
               });
             default:
@@ -86,20 +90,44 @@
       };
 
       const productsInitialState = {
-        items: null,
+        items: [],
+        loading: false,
+        loaded: false,
+        error: null,
       };
 
-      const SET_ITEMS = 'SET_ITEMS';
+      const ITEMS_LOADING_PENDING = 'ITEMS_LOADING_PENDING';
+      const ITEMS_LOADING_SUCCESS = 'ITEMS_LOADING_SUCCESS';
+      const ITEMS_LOADING_ERROR = 'ITEMS_LOADING_ERROR';
       const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
       const FAVORITE_ITEM = 'FAVORITE_ITEM';
       const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
 
       function productsReducer(state = productsInitialState, action) {
         switch (action.type) {
-          case SET_ITEMS:
+          case ITEMS_LOADING_PENDING:
+            return {
+              ...state,
+              items: [],
+              loading: true,
+              loaded: false,
+              error: null,
+            };
+          case ITEMS_LOADING_SUCCESS:
             return {
               ...state,
               items: action.items,
+              loading: false,
+              loaded: true,
+              error: null,
+            };
+          case ITEMS_LOADING_ERROR:
+            return {
+              ...state,
+              items: [],
+              loading: false,
+              loaded: false,
+              error: action.error,
             };
           case CHANGE_ITEM_PRICE:
             return {
@@ -145,18 +173,33 @@
         }
       }
 
-      function createSetItemsAction(items) {
+      function createLoadingPendingAction() {
         return {
-          type: SET_ITEMS,
+          type: ITEMS_LOADING_PENDING,
+        };
+      }
+
+      function createLoadingSuccessAction(items) {
+        return {
+          type: ITEMS_LOADING_SUCCESS,
           items,
         };
       }
 
-      function createLoadItemsAsyncAction(id) {
+      function createItemsLoadingErrorAction(error) {
+        return {
+          type: ITEMS_LOADING_ERROR,
+          error,
+        };
+      }
+
+      function createLoadItemsAsyncAction() {
         return (dispatch, getState, { api }) => {
-          api.get('/items').then((items) => {
-            dispatch(createSetItemsAction(items));
-          });
+          dispatch(createLoadingPendingAction());
+          api
+            .get('/items')
+            .then((items) => dispatch(createLoadingSuccessAction(items)))
+            .catch((error) => dispatch(createItemsLoadingErrorAction(error.message)));
         };
       }
 
@@ -314,9 +357,15 @@
         );
       }
 
+      function AlertError({ message }) {
+        return <div className="error">{message}</div>;
+      }
+
       const itemsContainerMapStateToProps = (state) => ({
         items: state.products.items,
-        loaded: state.products.items !== null,
+        loading: state.products.loading,
+        loaded: state.products.loaded,
+        error: state.products.error,
         placeholders: state.loading.placeholders,
       });
 
@@ -329,14 +378,23 @@
         itemsContainerMapDispatchToProps
       )(ItemsContainer);
 
-      function ItemsContainer({ items, load, loaded, placeholders }) {
+      function ItemsContainer({ items, loading, loaded, error, load, placeholders }) {
         React.useEffect(() => {
-          if (!loaded) {
+          if (!loaded && !loading && error === null) {
             load();
           }
-        }, [!loaded]);
-        if (!loaded) {
+        }, [loaded, loading, error]);
+
+        if (error !== null) {
+          return <AlertError message={error} />
+        }
+
+        if (loading) {
           return <Loading placeholders={placeholders} />;
+        }
+
+        if (!loaded) {
+          return null;
         }
 
         return <Items items={items} />;

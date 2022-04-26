@@ -85,6 +85,15 @@ button .favorite_icon {
   width: 1.5rem;
 }
 
+.error {
+  box-sizing: border-box;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: #ff5252;
+  color: #fff;
+}
+
 @keyframes placeHolderShimmer{
   0%{
     background-position: -468px 0
