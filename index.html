@@ -89,6 +89,125 @@
         },
       };
 
+      const ITEMS_LOADING_PENDING = 'ITEMS_LOADING_PENDING';
+      const ITEMS_LOADING_SUCCESS = 'ITEMS_LOADING_SUCCESS';
+      const ITEMS_LOADING_ERROR = 'ITEMS_LOADING_ERROR';
+      const CHANGE_ITEM_PRICE = 'CHANGE_ITEM_PRICE';
+      const FAVORITE_ITEM = 'FAVORITE_ITEM';
+      const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
+
+      function productsReducer(state, action) {
+        switch (action.type) {
+          case ITEMS_LOADING_PENDING:
+            return {
+              ...state,
+              items: [],
+              loading: true,
+              loaded: false,
+              error: null,
+            };
+          case ITEMS_LOADING_SUCCESS:
+            return {
+              ...state,
+              items: action.items,
+              loading: false,
+              loaded: true,
+              error: null,
+            };
+          case ITEMS_LOADING_ERROR:
+            return {
+              ...state,
+              items: [],
+              loading: false,
+              loaded: false,
+              error: action.error,
+            };
+          case CHANGE_ITEM_PRICE:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    price: action.price,
+                  };
+                }
+                return item;
+              }),
+            };
+          case FAVORITE_ITEM:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    favorite: true,
+                  };
+                }
+                return item;
+              }),
+            };
+          case UNFAVORITE_ITEM:
+            return {
+              ...state,
+              items: state.items.map((item) => {
+                if (item.id === action.id) {
+                  return {
+                    ...item,
+                    favorite: false,
+                  };
+                }
+                return item;
+              }),
+            };
+          default:
+            return state;
+        }
+      }
+
+      function createItemsLoadingPendingAction() {
+        return {
+          type: ITEMS_LOADING_PENDING,
+        };
+      }
+
+      function createItemsLoadingSuccessAction(items) {
+        return {
+          type: ITEMS_LOADING_SUCCESS,
+          items,
+        };
+      }
+
+      function createItemsLoadingErrorAction(error) {
+        return {
+          type: ITEMS_LOADING_ERROR,
+          error,
+        };
+      }
+
+      function createChangeItemPriceAction(id, price) {
+        return {
+          type: CHANGE_ITEM_PRICE,
+          id,
+          price,
+        };
+      }
+
+      function createFavoriteItemAction(id) {
+        return {
+          type: FAVORITE_ITEM,
+          id,
+        };
+      }
+
+      function createUnfavoriteItemAction(id) {
+        return {
+          type: UNFAVORITE_ITEM,
+          id,
+        };
+      }
+
       function App() {
         return (
           <div className="wrapper">
@@ -190,42 +309,22 @@
       }
 
       function ItemsContainer({ placeholders }) {
-        const [itemsState, setItemsState] = React.useState({
+        const [state, dispatch] = React.useReducer(productsReducer, {
           items: [],
           loading: false,
           loaded: false,
           error: null,
         });
 
-        const { items, loading, loaded, error } = itemsState;
+        const { items, loading, loaded, error } = state;
 
         React.useEffect(() => {
           if (!loaded && !loading && error === null) {
-            setItemsState((itemsState) => ({
-              ...itemsState,
-              loading: true,
-              loaded: false,
-              error: null,
-            }));
+            dispatch(createItemsLoadingPendingAction);
             api
               .get('/items')
-              .then((items) => {
-                setItemsState((itemsState) => ({
-                  ...itemsState,
-                  items,
-                  loading: false,
-                  loaded: true,
-                  error: null,
-                }));
-              })
-              .catch((error) => {
-                setItemsState((itemsState) => ({
-                  ...itemsState,
-                  loading: false,
-                  loaded: false,
-                  error: error.message,
-                }));
-              });
+              .then((items) => dispatch(createItemsLoadingSuccessAction(items)))
+              .catch((error) => dispatch(createItemsLoadingErrorAction(error.message)));
           }
         }, [loaded, loading, error]);
 
@@ -243,52 +342,19 @@
 
         const subscribe = (id) => {
           return stream.subscribe(`price-${id}`, (data) => {
-            setItemsState((itemsState) => ({
-              ...itemsState,
-              items: itemsState.items.map((item) => {
-                if (item.id === data.id) {
-                  return {
-                    ...item,
-                    price: data.price,
-                  };
-                }
-                return item;
-              }),
-            }));
+            dispatch(createChangeItemPriceAction(data.id, data.price));
           });
         };
 
         const favorite = (id) => {
           api.post(`/items/${id}/favorite`).then(() => {
-            setItemsState((itemsState) => ({
-              ...itemsState,
-              items: itemsState.items.map((item) => {
-                if (item.id === id) {
-                  return {
-                    ...item,
-                    favorite: true,
-                  };
-                }
-                return item;
-              }),
-            }));
+            dispatch(createFavoriteItemAction(id));
           });
         };
 
         const unfavorite = (id) => {
           api.post(`/items/${id}/unfavorite`).then(() => {
-            setItemsState((itemsState) => ({
-              ...itemsState,
-              items: itemsState.items.map((item) => {
-                if (item.id === id) {
-                  return {
-                    ...item,
-                    favorite: false,
-                  };
-                }
-                return item;
-              }),
-            }));
+            dispatch(createUnfavoriteItemAction(id));
           });
         };
 
