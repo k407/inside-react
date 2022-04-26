@@ -89,6 +89,15 @@
         },
       };
 
+      // ##########################################################################
+
+      const productsInitialState = {
+        items: [],
+        loading: false,
+        loaded: false,
+        error: null,
+      };
+
       const ITEMS_LOADING_PENDING = 'ITEMS_LOADING_PENDING';
       const ITEMS_LOADING_SUCCESS = 'ITEMS_LOADING_SUCCESS';
       const ITEMS_LOADING_ERROR = 'ITEMS_LOADING_ERROR';
@@ -96,7 +105,7 @@
       const FAVORITE_ITEM = 'FAVORITE_ITEM';
       const UNFAVORITE_ITEM = 'UNFAVORITE_ITEM';
 
-      function productsReducer(state, action) {
+      function productsReducer(state = productsInitialState, action) {
         switch (action.type) {
           case ITEMS_LOADING_PENDING:
             return {
@@ -166,27 +175,39 @@
         }
       }
 
-      function createItemsLoadingPendingAction() {
+      // ##########################################################################
+
+      function ItemsLoadingPending() {
         return {
           type: ITEMS_LOADING_PENDING,
         };
       }
 
-      function createItemsLoadingSuccessAction(items) {
+      function ItemsLoadingSuccess(items) {
         return {
           type: ITEMS_LOADING_SUCCESS,
           items,
         };
       }
 
-      function createItemsLoadingErrorAction(error) {
+      function ItemsLoadingError(error) {
         return {
           type: ITEMS_LOADING_ERROR,
           error,
         };
       }
 
-      function createChangeItemPriceAction(id, price) {
+      function loadItemsAsync() {
+        return (dispatch, getState, { api }) => {
+          dispatch(ItemsLoadingPending());
+          api
+            .get('/items')
+            .then((items) => dispatch(ItemsLoadingSuccess(items)))
+            .catch((error) => dispatch(ItemsLoadingError(error.message)));
+        };
+      }
+
+      function changeItemPrice(id, price) {
         return {
           type: CHANGE_ITEM_PRICE,
           id,
@@ -194,25 +215,60 @@
         };
       }
 
-      function createFavoriteItemAction(id) {
+      function subscribeToItemPrice(id) {
+        return (dispatch, getState, { stream }) => {
+          return stream.subscribe(`price-${id}`, (data) => {
+            dispatch(changeItemPrice(data.id, data.price));
+          });
+        };
+      }
+
+      function favoriteItem(id) {
         return {
           type: FAVORITE_ITEM,
           id,
         };
       }
 
-      function createUnfavoriteItemAction(id) {
+      function favoriteItemAsync(id) {
+        return (dispatch, getState, { api }) => {
+          api.post(`/items/${id}/favorite`).then(() => {
+            dispatch(favoriteItem(id));
+          });
+        };
+      }
+
+      function unfavoriteItem(id) {
         return {
           type: UNFAVORITE_ITEM,
           id,
         };
       }
 
+      function unfavoriteItemAsync(id) {
+        return (dispatch, getState, { api }) => {
+          api.post(`/items/${id}/unfavorite`).then(() => {
+            dispatch(unfavoriteItem(id));
+          });
+        };
+      }
+
+      // ##########################################################################
+
+      const thunk = ReduxThunk.default;
+
+      const store = Redux.createStore(
+        Redux.combineReducers({ products: productsReducer }),
+        Redux.applyMiddleware(thunk.withExtraArgument({ api, stream }))
+      );
+
+      // ##########################################################################
+
       function App() {
         return (
           <div className="wrapper">
             <Header />
-            <ItemsContainer />
+            <ItemsContainerConnected />
           </div>
         );
       }
@@ -253,14 +309,6 @@
             <img className="icon" src={isDay ? 'images/sun.png' : 'images/moon.png'} alt="" />
           </div>
         );
-      }
-
-      function Placeholder({ placeholder }) {
-        return (
-          <placeholder.tagName className={placeholder.className}>
-            {placeholder.innerText}
-          </placeholder.tagName>
-        )
       }
 
       function LoadingContainer() {
@@ -304,80 +352,130 @@
         );
       }
 
+      function Placeholder({ placeholder }) {
+        return (
+          <placeholder.tagName className={placeholder.className}>
+            {placeholder.innerText}
+          </placeholder.tagName>
+        )
+      }
+
       function AlertError({ message }) {
         return <div className="error">{message}</div>;
       }
 
-      function ItemsContainer({ placeholders }) {
-        const [state, dispatch] = React.useReducer(productsReducer, {
-          items: [],
-          loading: false,
-          loaded: false,
-          error: null,
-        });
+      // function ItemsContainer({ placeholders }) {
+      //   const [state, dispatch] = React.useReducer(productsReducer, {
+      //     items: [],
+      //     loading: false,
+      //     loaded: false,
+      //     error: null,
+      //   });
+      //
+      //   const { items, loading, loaded, error } = state;
+      //
+      //   React.useEffect(() => {
+      //     if (!loaded && !loading && error === null) {
+      //       dispatch(createItemsLoadingPendingAction);
+      //       api
+      //         .get('/items')
+      //         .then((items) => dispatch(createItemsLoadingSuccessAction(items)))
+      //         .catch((error) => dispatch(createItemsLoadingErrorAction(error.message)));
+      //     }
+      //   }, [loaded, loading, error]);
+      //
+      //   if (error !== null) {
+      //     return <AlertError message={error} />;
+      //   }
+      //
+      //   if (loading) {
+      //     return <LoadingContainer placeholders={placeholders} />;
+      //   }
+      //
+      //   if (!loaded) {
+      //     return null;
+      //   }
+      //
+      //   const subscribe = (id) => {
+      //     return stream.subscribe(`price-${id}`, (data) => {
+      //       dispatch(createChangeItemPriceAction(data.id, data.price));
+      //     });
+      //   };
+      //
+      //   const favorite = (id) => {
+      //     api.post(`/items/${id}/favorite`).then(() => {
+      //       dispatch(createFavoriteItemAction(id));
+      //     });
+      //   };
+      //
+      //   const unfavorite = (id) => {
+      //     api.post(`/items/${id}/unfavorite`).then(() => {
+      //       dispatch(createUnfavoriteItemAction(id));
+      //     });
+      //   };
+      //
+      //   return <Items items={items} subscribe={subscribe} favorite={favorite} unfavorite={unfavorite} />;
+      // }
 
-        const { items, loading, loaded, error } = state;
-
+      function ItemsContainer({ items, loading, loaded, error, load }) {
         React.useEffect(() => {
           if (!loaded && !loading && error === null) {
-            dispatch(createItemsLoadingPendingAction);
-            api
-              .get('/items')
-              .then((items) => dispatch(createItemsLoadingSuccessAction(items)))
-              .catch((error) => dispatch(createItemsLoadingErrorAction(error.message)));
+            load();
           }
-        }, [loaded, loading, error]);
+        }, [loading, loaded, error]);
 
         if (error !== null) {
           return <AlertError message={error} />;
         }
 
         if (loading) {
-          return <LoadingContainer placeholders={placeholders} />;
+          return <LoadingContainer />;
         }
 
         if (!loaded) {
           return null;
         }
 
-        const subscribe = (id) => {
-          return stream.subscribe(`price-${id}`, (data) => {
-            dispatch(createChangeItemPriceAction(data.id, data.price));
-          });
-        };
-
-        const favorite = (id) => {
-          api.post(`/items/${id}/favorite`).then(() => {
-            dispatch(createFavoriteItemAction(id));
-          });
-        };
-
-        const unfavorite = (id) => {
-          api.post(`/items/${id}/unfavorite`).then(() => {
-            dispatch(createUnfavoriteItemAction(id));
-          });
-        };
-
-        return <Items items={items} subscribe={subscribe} favorite={favorite} unfavorite={unfavorite} />;
+        return <Items items={items} />;
       }
 
-      function Items({ items, subscribe, favorite, unfavorite }) {
+      const itemsContainerMapStateToProps = (state) => ({
+        items: state.products.items,
+        loading: state.products.loading,
+        loaded: state.products.loaded,
+        error: state.products.error,
+      });
+
+      const itemsContainerMapDispatchToProps = {
+        load: loadItemsAsync,
+      };
+
+      const ItemsContainerConnected = ReactRedux.connect(
+        itemsContainerMapStateToProps,
+        itemsContainerMapDispatchToProps
+      )(ItemsContainer);
+
+      function Items({ items }) {
         return (
           <div className="items">
-            {items.map((item) => (
-              <ItemContainer item={item} subscribe={subscribe} favorite={favorite} unfavorite={unfavorite} key={item.id} />
-            ))}
+            {items.map((item) => (<ItemContainerConnected item={item} key={item.id} />))}
           </div>
         );
       }
 
-      function ItemContainer({ item, subscribe, favorite, unfavorite }) {
+      function ItemContainer({ item, subscribe }) {
         React.useEffect(() => {
           return subscribe(item.id);
         }, [item.id]);
 
-        return <Item item={item} favorite={favorite} unfavorite={unfavorite} />;
+        return <ItemConnected item={item} />;
       }
+
+      const itemContainerMapDispatchToProps = {
+        subscribe: subscribeToItemPrice,
+      };
+
+      const ItemContainerConnected = ReactRedux.connect(null, itemContainerMapDispatchToProps)(ItemContainer);
 
       function Item({ item, favorite, unfavorite }) {
         return (
@@ -394,6 +492,13 @@
         );
       }
 
+      const itemMapDispatchToProps = {
+        favorite: favoriteItemAsync,
+        unfavorite: unfavoriteItemAsync,
+      };
+
+      const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
+
       function Favorite({ active, favorite, unfavorite }) {
         return active ? (
           <button type="button" className="unfavorite" onClick={unfavorite}>
@@ -406,7 +511,14 @@
         );
       }
 
-      ReactDOM.render(<App />, document.querySelector('#app'));
+      // ##########################################################################
+
+      ReactDOM.render(
+        <ReactRedux.Provider store={store}>
+          <App />
+        </ReactRedux.Provider>,
+        document.querySelector('#app')
+      );
     </script>
   </body>
 </html>
