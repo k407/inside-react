@@ -21,17 +21,32 @@ button:hover {
   background-color: #e8e8e8;
 }
 
+button:disabled {
+  cursor: wait;
+}
+
 button.favorite {
   color: black;
+}
+
+button .favorite_icon {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+button.favorite:disabled {
+  background: #fff;
+  border: 1px solid #ccc;
+  color: #ccc;
 }
 
 button.unfavorite {
   color: #fd0000;
 }
 
-button .favorite_icon {
-  height: 0.75rem;
-  width: 0.75rem;
+button.unfavorite:disabled {
+  border: 1px solid #ffc0ad;
+  color: #ff8c68;
 }
 
 .wrapper {

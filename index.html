@@ -232,7 +232,7 @@
 
       function favoriteItemAsync(id) {
         return (dispatch, getState, { api }) => {
-          api.post(`/items/${id}/favorite`).then(() => {
+          return api.post(`/items/${id}/favorite`).then(() => {
             dispatch(favoriteItem(id));
           });
         };
@@ -247,7 +247,7 @@
 
       function unfavoriteItemAsync(id) {
         return (dispatch, getState, { api }) => {
-          api.post(`/items/${id}/unfavorite`).then(() => {
+          return api.post(`/items/${id}/unfavorite`).then(() => {
             dispatch(unfavoriteItem(id));
           });
         };
@@ -364,59 +364,6 @@
         return <div className="error">{message}</div>;
       }
 
-      // function ItemsContainer({ placeholders }) {
-      //   const [state, dispatch] = React.useReducer(productsReducer, {
-      //     items: [],
-      //     loading: false,
-      //     loaded: false,
-      //     error: null,
-      //   });
-      //
-      //   const { items, loading, loaded, error } = state;
-      //
-      //   React.useEffect(() => {
-      //     if (!loaded && !loading && error === null) {
-      //       dispatch(createItemsLoadingPendingAction);
-      //       api
-      //         .get('/items')
-      //         .then((items) => dispatch(createItemsLoadingSuccessAction(items)))
-      //         .catch((error) => dispatch(createItemsLoadingErrorAction(error.message)));
-      //     }
-      //   }, [loaded, loading, error]);
-      //
-      //   if (error !== null) {
-      //     return <AlertError message={error} />;
-      //   }
-      //
-      //   if (loading) {
-      //     return <LoadingContainer placeholders={placeholders} />;
-      //   }
-      //
-      //   if (!loaded) {
-      //     return null;
-      //   }
-      //
-      //   const subscribe = (id) => {
-      //     return stream.subscribe(`price-${id}`, (data) => {
-      //       dispatch(createChangeItemPriceAction(data.id, data.price));
-      //     });
-      //   };
-      //
-      //   const favorite = (id) => {
-      //     api.post(`/items/${id}/favorite`).then(() => {
-      //       dispatch(createFavoriteItemAction(id));
-      //     });
-      //   };
-      //
-      //   const unfavorite = (id) => {
-      //     api.post(`/items/${id}/unfavorite`).then(() => {
-      //       dispatch(createUnfavoriteItemAction(id));
-      //     });
-      //   };
-      //
-      //   return <Items items={items} subscribe={subscribe} favorite={favorite} unfavorite={unfavorite} />;
-      // }
-
       function ItemsContainer({ items, loading, loaded, error, load }) {
         React.useEffect(() => {
           if (!loaded && !loading && error === null) {
@@ -500,12 +447,28 @@
       const ItemConnected = ReactRedux.connect(null, itemMapDispatchToProps)(Item);
 
       function Favorite({ active, favorite, unfavorite }) {
+        const [enabled, setEnabled] = React.useState(true);
+
+        const onClickFavorite = () => {
+          setEnabled(false);
+          favorite()
+            .then(() => setEnabled(true))
+            .catch(() => setEnabled(true));
+        };
+
+        const onClickUnfavorite = () => {
+          setEnabled(false);
+          unfavorite()
+            .then(() => setEnabled(true))
+            .catch(() => setEnabled(true));
+        };
+
         return active ? (
-          <button type="button" className="unfavorite" onClick={unfavorite}>
+          <button type="button" onClick={onClickUnfavorite} className="unfavorite" disabled={!enabled}>
             <img className="favorite_icon" src="images/heart-sharp.png" alt="" /> Unfavorite
           </button>
         ) : (
-          <button type="button" className="favorite" onClick={favorite}>
+          <button type="button" onClick={onClickFavorite} className="favorite" disabled={!enabled}>
             <img className="favorite_icon" src="images/heart-outline.png" alt="" /> Favorite
           </button>
         );
