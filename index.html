@@ -264,9 +264,44 @@
 
       // ##########################################################################
 
+      function Router() {
+        const [location, setLocation] = React.useState('a');
+
+        const navigate = (location) => {
+          setLocation(location);
+        };
+
+        return (
+          <>
+            <ul>
+              <li><Link to="a" navigate={navigate}>a</Link></li>
+              <li><Link to="b" navigate={navigate}>b</Link></li>
+              <li><Link to="c" navigate={navigate}>c</Link></li>
+            </ul>
+            <div>
+              {location === 'a' ? <p>Content A</p> : null}
+              {location === 'b' ? <p>Content B</p> : null}
+              {location === 'c' ? <p>Content C</p> : null}
+            </div>
+          </>
+        );
+      }
+
+      function Link({ to, children, navigate }) {
+        const onClick = (event) => {
+          event.preventDefault();
+          navigate(to);
+        };
+
+        return <a href="" onClick={onClick}>{children}</a>
+      }
+
+      // ##########################################################################
+
       function App() {
         return (
           <div className="wrapper">
+            <Router />
             <Header />
             <ItemsContainerConnected />
           </div>
@@ -405,7 +440,9 @@
       function Items({ items }) {
         return (
           <div className="items">
-            {items.map((item) => (<ItemContainerConnected item={item} key={item.id} />))}
+            {items.map((item) => (
+              <ItemContainerConnected item={item} key={item.id} />
+            ))}
           </div>
         );
       }
