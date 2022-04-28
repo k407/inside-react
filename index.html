@@ -276,17 +276,36 @@
         return <RouterContext.Provider value={{ location, navigate }} children={children} />;
       }
 
+      function matchPath(location, path) {
+        const regexp = new RegExp('^' + path + '$');
+        return regexp.exec(location);
+      }
+
       function Route({ path, children }) {
         return (
           <RouterContext.Consumer>
             {(value) => {
-              if (value.location === path) {
-                return children;
+              const match = matchPath(value.location, path);
+              if (match) {
+                return (
+                  <RouterContext.Provider
+                    value={{
+                      ...value,
+                      match,
+                    }}
+                    children={children}
+                  />
+                );
               }
               return null;
             }}
           </RouterContext.Consumer>
         );
+      }
+
+      function useParams() {
+        const router = React.useContext(RouterContext);
+        return router.match.groups;
       }
 
       // ##########################################################################
@@ -311,6 +330,9 @@
             </Route>
             <Route path="/items">
               <ItemsPage />
+            </Route>
+            <Route path="/items/(?<id>[\w-]+)">
+              <ItemPage />
             </Route>
             <Route path="/help">
               <HelpPage />
@@ -342,6 +364,16 @@
           <>
             <ItemsContainerConnected />
           </>
+        );
+      }
+
+      function ItemPage() {
+        const router = useParams();
+        return (
+          <Page>
+            <h1>{router.id}</h1>
+            <p>some text</p>
+          </Page>
         );
       }
 
@@ -560,7 +592,9 @@
       function Item({ item, favorite, unfavorite }) {
         return (
           <article className={'item' + (item.favorite ? ' item_favorite' : '')}>
-            <h2 className="item_name">{item.name}</h2>
+            <h2 className="item_name">
+              <Link to={`/items/${item.id}`}>{item.name}</Link>
+            </h2>
             <div className="item_price">{item.price}</div>
             <Favorite
               active={item.favorite}

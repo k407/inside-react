@@ -138,6 +138,14 @@ nav {
   font-size: 1.2rem;
 }
 
+.item_name a {
+  color: black;
+}
+
+.item_name a:hover {
+  color: #fd0000;
+}
+
 .item_price {
   font-size: 1.5rem;
 }
