@@ -1,7 +1,13 @@
+a {
+  text-decoration: none;
+}
+
 body {
   font: caption;
   font-size: 16px;
   background-color: #F9F9FB;
+  margin: 0;
+  padding: 0;
 }
 
 p {
@@ -53,9 +59,55 @@ button.unfavorite:disabled {
   padding: 2rem;
   max-width: 1440px;
   margin: auto;
+  align-items: center;
+  height: 100%;
+}
+
+nav {
+  position: fixed;
+  width: 100%;
+  height: 45px;
+  display: flex;
+  justify-content: space-between;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 6px 0 rgba(32, 33, 36, 0.28);
+}
+
+.nav_home-link {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+
+}
+
+.nav_logo {
+  height: 30px;
+  width: 30px;
+}
+
+.nav_items {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  list-style-type: none;
+}
+
+.nav_item {
+  margin: 0 1.5rem;
+}
+
+.nav_link {
+  color: black;
+}
+
+.nav_link:hover {
+  color: #fd0000;
 }
 
 .header {
+  padding-top: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
