@@ -272,28 +272,70 @@
         };
 
         return (
-          <>
+          <RouterContext.Provider value={{ location, navigate }}>
             <ul>
-              <li><Link to="a" navigate={navigate}>a</Link></li>
-              <li><Link to="b" navigate={navigate}>b</Link></li>
-              <li><Link to="c" navigate={navigate}>c</Link></li>
+              <li>
+                <Link to="a" navigate={navigate}>
+                  a
+                </Link>
+              </li>
+              <li>
+                <Link to="b" navigate={navigate}>
+                  b
+                </Link>
+              </li>
+              <li>
+                <Link to="c" navigate={navigate}>
+                  c
+                </Link>
+              </li>
             </ul>
             <div>
-              {location === 'a' ? <p>Content A</p> : null}
-              {location === 'b' ? <p>Content B</p> : null}
-              {location === 'c' ? <p>Content C</p> : null}
+              <Route path="a" location={location}>
+                <p>Content A</p>
+              </Route>
+              <Route path="b" location={location}>
+                <p>Content B</p>
+              </Route>
+              <Route path="c" location={location}>
+                <p>Content C</p>
+              </Route>
             </div>
-          </>
+          </RouterContext.Provider>
         );
       }
 
-      function Link({ to, children, navigate }) {
-        const onClick = (event) => {
-          event.preventDefault();
-          navigate(to);
-        };
+      const RouterContext = React.createContext();
 
-        return <a href="" onClick={onClick}>{children}</a>
+      function Link({ to, children, ...options }) {
+        return (
+          <RouterContext.Consumer>
+            {(value) => {
+              const onClick = (event) => {
+                event.preventDefault();
+                value.navigate(to);
+              };
+              return (
+                <a href="" onClick={onClick} {...options}>
+                  {children}
+                </a>
+              );
+            }}
+          </RouterContext.Consumer>
+        );
+      }
+
+      function Route({ path, children }) {
+        return (
+          <RouterContext.Consumer>
+            {(value) => {
+              if (value.location === path) {
+                return children;
+              }
+              return null;
+            }}
+          </RouterContext.Consumer>
+        );
       }
 
       // ##########################################################################
