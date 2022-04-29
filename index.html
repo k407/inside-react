@@ -98,6 +98,7 @@
         error: null,
       };
 
+      const ITEMS_CLEAR = 'ITEMS_CLEAR';
       const ITEMS_LOADING_PENDING = 'ITEMS_LOADING_PENDING';
       const ITEMS_LOADING_SUCCESS = 'ITEMS_LOADING_SUCCESS';
       const ITEMS_LOADING_ERROR = 'ITEMS_LOADING_ERROR';
@@ -107,6 +108,14 @@
 
       function productsReducer(state = productsInitialState, action) {
         switch (action.type) {
+          case ITEMS_CLEAR:
+            return {
+              ...state,
+              items: [],
+              loading: false,
+              loaded: false,
+              error: null,
+            };
           case ITEMS_LOADING_PENDING:
             return {
               ...state,
@@ -177,20 +186,26 @@
 
       // ##########################################################################
 
-      function ItemsLoadingPending() {
+      function itemsClear() {
+        return {
+          type: ITEMS_CLEAR,
+        };
+      }
+
+      function itemsLoadingPending() {
         return {
           type: ITEMS_LOADING_PENDING,
         };
       }
 
-      function ItemsLoadingSuccess(items) {
+      function itemsLoadingSuccess(items) {
         return {
           type: ITEMS_LOADING_SUCCESS,
           items,
         };
       }
 
-      function ItemsLoadingError(error) {
+      function itemsLoadingError(error) {
         return {
           type: ITEMS_LOADING_ERROR,
           error,
@@ -199,11 +214,11 @@
 
       function loadItemsAsync() {
         return (dispatch, getState, { api }) => {
-          dispatch(ItemsLoadingPending());
+          dispatch(itemsLoadingPending());
           api
             .get('/items')
-            .then((items) => dispatch(ItemsLoadingSuccess(items)))
-            .catch((error) => dispatch(ItemsLoadingError(error.message)));
+            .then((items) => dispatch(itemsLoadingSuccess(items)))
+            .catch((error) => dispatch(itemsLoadingError(error.message)));
         };
       }
 
@@ -555,12 +570,18 @@
         );
       }
 
-      function ItemsContainer({ items, loading, loaded, error, load }) {
+      function ItemsContainer({ items, loading, loaded, error, load, unload }) {
         React.useEffect(() => {
           if (!loaded && !loading && error === null) {
             load();
           }
         }, [loading, loaded, error]);
+
+        React.useEffect(() => {
+          if (loaded || error !== null) {
+            return unload;
+          }
+        }, [loaded, error]);
 
         if (error !== null) {
           return <AlertError message={error} retry={load} />;
@@ -586,6 +607,7 @@
 
       const itemsContainerMapDispatchToProps = {
         load: loadItemsAsync,
+        unload: itemsClear,
       };
 
       const ItemsContainerConnected = ReactRedux.connect(
