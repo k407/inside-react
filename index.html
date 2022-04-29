@@ -276,16 +276,20 @@
         return <RouterContext.Provider value={{ location, navigate }} children={children} />;
       }
 
-      function matchPath(location, path) {
-        const regexp = new RegExp('^' + path + '$');
+      function matchPath(location, params) {
+        const regexp = new RegExp(
+          params.exact
+            ? `^${params.path}$`
+            : `^${params.path}(/.*)?$`
+        );
         return regexp.exec(location);
       }
 
-      function Route({ path, children }) {
+      function Route(props) {
         return (
           <RouterContext.Consumer>
             {(value) => {
-              const match = matchPath(value.location, path);
+              const match = matchPath(value.location, props);
               if (match) {
                 return (
                   <RouterContext.Provider
@@ -293,7 +297,7 @@
                       ...value,
                       match,
                     }}
-                    children={children}
+                    children={props.children}
                   />
                 );
               }
@@ -325,16 +329,16 @@
       function Content() {
         return (
           <>
-            <Route path="/">
+            <Route path="/" exact>
               <HomePage />
             </Route>
-            <Route path="/items">
+            <Route path="/items" exact>
               <ItemsPage />
             </Route>
-            <Route path="/items/(?<id>[\w-]+)">
+            <Route path="/items/(?<id>[\w-]+)" exact>
               <ItemPage />
             </Route>
-            <Route path="/help">
+            <Route path="/help" exact>
               <HelpPage />
             </Route>
           </>
@@ -352,8 +356,8 @@
             <p>Welcome to website!</p>
             <p>
               View
-              <Link to="/items">items</Link> or read our
-              <Link to="/help">help</Link>
+              <Link to="/items"> items</Link> or read our
+              <Link to="/help"> help</Link>
             </p>
           </Page>
         );
@@ -383,7 +387,7 @@
             <h1>Help</h1>
             <p>
               Go to
-              <Link to="/items">items</Link> and:
+              <Link to="/items"> items</Link> and:
             </p>
             <ol>
               <li>Choose an interesting item</li>
@@ -391,7 +395,7 @@
             </ol>
             <p>
               Back to
-              <Link to="/">home</Link>
+              <Link to="/"> home</Link>
             </p>
           </Page>
         );
