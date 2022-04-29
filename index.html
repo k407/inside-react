@@ -282,13 +282,28 @@
       const RouterContext = React.createContext();
 
       function Router({ children }) {
-        const [location, setLocation] = React.useState('/');
+        const [location, setLocation] = React.useState(window.location.hash.slice(1) || '/');
+
+        React.useEffect(() => {
+          const listener = () => {
+            setLocation(window.location.hash.slice(1) || '/');
+          };
+          window.addEventListener('hashchange', listener, false);
+          return () => {
+            window.removeEventListener('hashchange', listener);
+          };
+        }, [setLocation]);
 
         const navigate = (location) => {
+          window.location.hash = location;
           setLocation(location);
         };
 
-        return <RouterContext.Provider value={{ location, navigate }} children={children} />;
+        const createHref = (path) => {
+          return `#${path}`;
+        };
+
+        return <RouterContext.Provider value={{ location, navigate, createHref }} children={children} />;
       }
 
       function matchPath(location, params) {
@@ -350,6 +365,25 @@
               <Content />
             </div>
           </Router>
+        );
+      }
+
+      function Link({ to, children, ...options }) {
+        return (
+          <RouterContext.Consumer>
+            {(value) => {
+              const href = to ? value.createHref(to) : '';
+              const onClick = (event) => {
+                event.preventDefault();
+                value.navigate(to);
+              };
+              return (
+                <a href={href} onClick={onClick} {...options}>
+                  {children}
+                </a>
+              );
+            }}
+          </RouterContext.Consumer>
         );
       }
 
@@ -453,24 +487,6 @@
               </li>
             </ul>
           </nav>
-        );
-      }
-
-      function Link({ to, children, ...options }) {
-        return (
-          <RouterContext.Consumer>
-            {(value) => {
-              const onClick = (event) => {
-                event.preventDefault();
-                value.navigate(to);
-              };
-              return (
-                <a href="" onClick={onClick} {...options}>
-                  {children}
-                </a>
-              );
-            }}
-          </RouterContext.Consumer>
         );
       }
 
