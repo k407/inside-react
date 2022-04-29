@@ -46,7 +46,7 @@
                       },
                     ]);
                   } else {
-                    reject(new Error('Connection error'));
+                    reject(new Error('Connection error!'));
                   }
                 }, 1000);
               });
@@ -277,11 +277,7 @@
       }
 
       function matchPath(location, params) {
-        const regexp = new RegExp(
-          params.exact
-            ? `^${params.path}$`
-            : `^${params.path}(/.*)?$`
-        );
+        const regexp = new RegExp(params.exact ? `^${params.path}$` : `^${params.path}(/.*)?$`);
         return regexp.exec(location);
       }
 
@@ -289,7 +285,7 @@
         return (
           <RouterContext.Consumer>
             {(value) => {
-              const match = matchPath(value.location, props);
+              const match = props.computedMatch ? props.computedMatch : matchPath(value.location, props);
               if (match) {
                 return (
                   <RouterContext.Provider
@@ -300,6 +296,22 @@
                     children={props.children}
                   />
                 );
+              }
+              return null;
+            }}
+          </RouterContext.Consumer>
+        );
+      }
+
+      function Switch({ children }) {
+        return (
+          <RouterContext.Consumer>
+            {(value) => {
+              for (const child of children) {
+                const match = matchPath(value.location, child.props);
+                if (match) {
+                  return React.cloneElement(child, { computedMatch: match });
+                }
               }
               return null;
             }}
@@ -328,7 +340,7 @@
 
       function Content() {
         return (
-          <>
+          <Switch>
             <Route path="/" exact>
               <HomePage />
             </Route>
@@ -341,8 +353,15 @@
             <Route path="/help" exact>
               <HelpPage />
             </Route>
-          </>
+            <Route path=".*">
+              <NotFound />
+            </Route>
+          </Switch>
         );
+      }
+
+      function NotFound() {
+        return <div>Not found!</div>;
       }
 
       function Page({ children }) {
@@ -527,8 +546,13 @@
         )
       }
 
-      function AlertError({ message }) {
-        return <div className="error">{message}</div>;
+      function AlertError({ message, retry }) {
+        return (
+          <div className="error">
+            <span>{message} </span>
+            {retry ? <strong onClick={retry}>retry</strong> : null}
+          </div>
+        );
       }
 
       function ItemsContainer({ items, loading, loaded, error, load }) {
@@ -539,7 +563,7 @@
         }, [loading, loaded, error]);
 
         if (error !== null) {
-          return <AlertError message={error} />;
+          return <AlertError message={error} retry={load} />;
         }
 
         if (loading) {
