@@ -11,6 +11,7 @@
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/redux@latest/dist/redux.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-router-dom@5.2.0/umd/react-router-dom.js" crossorigin></script>
     <script src="https://unpkg.com/react-redux@8.0.1/dist/react-redux.min.js" crossorigin></script>
     <script src="https://unpkg.com/redux-thunk@2.1.0/dist/redux-thunk.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
@@ -279,127 +280,7 @@
 
       // ##########################################################################
 
-      const RouterContext = React.createContext();
-
-      function Router({ history, children }) {
-        const [location, setLocation] = React.useState(history.location);
-
-        React.useEffect(() => {
-          return history.listen((location) => {
-            setLocation(location);
-          });
-        }, [history, setLocation]);
-
-        return <RouterContext.Provider value={{ location, history }} children={children} />;
-      }
-
-      function createHashHistory() {
-        return {
-          get location() {
-            return window.location.hash.slice(1) || '/';
-          },
-          push(location) {
-            window.location.hash = location;
-          },
-          createHref(path) {
-            return '#' + path;
-          },
-          listen(listener) {
-            const hashListener = () => {
-              listener(window.location.hash.slice(1));
-            };
-            window.addEventListener('hashchange', hashListener, false);
-            return () => {
-              window.removeEventListener('hashchange', hashListener);
-            };
-          },
-        };
-      }
-
-      function HashRouter({ children }) {
-        const history = createHashHistory();
-        return <Router history={history} children={children} />;
-      }
-
-      function createBrowserHistory() {
-        return {
-          get location() {
-            const state = window.history.state;
-            return state ? state.location : window.location.pathname;
-          },
-          push(location) {
-            const state = { location };
-            window.history.pushState(state, '', location);
-            window.dispatchEvent(new PopStateEvent('popstate', { state: state }));
-          },
-          createHref(path) {
-            return path;
-          },
-          listen(listener) {
-            const stateListener = (event) => {
-              const state = event.state;
-              listener(state ? state.location : window.location.pathname);
-            };
-            window.addEventListener('popstate', stateListener, false);
-            return () => {
-              window.removeEventListener('popstate', stateListener);
-            };
-          },
-        };
-      }
-
-      function BrowserRouter({ children }) {
-        const history = createBrowserHistory();
-        return <Router history={history} children={children} />;
-      }
-
-      function matchPath(location, params) {
-        const regexp = new RegExp(params.exact ? `^${params.path}$` : `^${params.path}(/.*)?$`);
-        return regexp.exec(location);
-      }
-
-      function Route(props) {
-        return (
-          <RouterContext.Consumer>
-            {(value) => {
-              const match = props.computedMatch ? props.computedMatch : matchPath(value.location, props);
-              if (match) {
-                return (
-                  <RouterContext.Provider
-                    value={{
-                      ...value,
-                      match,
-                    }}
-                    children={props.children}
-                  />
-                );
-              }
-              return null;
-            }}
-          </RouterContext.Consumer>
-        );
-      }
-
-      function Switch({ children }) {
-        return (
-          <RouterContext.Consumer>
-            {(value) => {
-              for (const child of children) {
-                const match = matchPath(value.location, child.props);
-                if (match) {
-                  return React.cloneElement(child, { computedMatch: match });
-                }
-              }
-              return null;
-            }}
-          </RouterContext.Consumer>
-        );
-      }
-
-      function useParams() {
-        const router = React.useContext(RouterContext);
-        return router.match.groups;
-      }
+      const { BrowserRouter, HashRouter, Switch, Route, Link, NavLink, useParams } = ReactRouterDOM;
 
       // ##########################################################################
 
@@ -415,25 +296,6 @@
         );
       }
 
-      function Link({ to, children, ...options }) {
-        return (
-          <RouterContext.Consumer>
-            {(value) => {
-              const href = to ? value.history.createHref(to) : '';
-              const onClick = (event) => {
-                event.preventDefault();
-                value.history.push(to);
-              };
-              return (
-                <a href={href} onClick={onClick} {...options}>
-                  {children}
-                </a>
-              );
-            }}
-          </RouterContext.Consumer>
-        );
-      }
-
       function Content() {
         return (
           <Switch>
@@ -443,13 +305,13 @@
             <Route path="/items" exact>
               <ItemsPage />
             </Route>
-            <Route path="/items/(?<id>[\w-]+)" exact>
+            <Route path="/items/:id" exact>
               <ItemPage />
             </Route>
             <Route path="/help" exact>
               <HelpPage />
             </Route>
-            <Route path=".*">
+            <Route path="*">
               <NotFound />
             </Route>
           </Switch>
@@ -524,13 +386,13 @@
             </Link>
             <ul className="nav_items">
               <li className="nav_item">
-                <Link className="nav_link" to="/">Home</Link>
+                <NavLink className="nav_link" to="/" exact>Home</NavLink>
               </li>
               <li className="nav_item">
-                <Link className="nav_link" to="/items">Items</Link>
+                <NavLink className="nav_link" to="/items">Items</NavLink>
               </li>
               <li className="nav_item">
-                <Link className="nav_link" to="/help">Help</Link>
+                <NavLink className="nav_link" to="/help" exact>Help</NavLink>
               </li>
             </ul>
           </nav>

@@ -110,6 +110,10 @@ nav {
   color: #fd0000;
 }
 
+.nav_link.active {
+  color: #fd0000;
+}
+
 .header {
   padding-top: 50px;
   display: flex;
